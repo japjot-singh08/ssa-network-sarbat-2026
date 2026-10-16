@@ -13,7 +13,9 @@
     "demo:credentials": "node scripts/setup-demo.mjs --show",
     "seed:supabase": "node --env-file=.env.local --import tsx scripts/seed.ts",
     "test:browser": "playwright test",
-    "format": "prettier --write app lib tests scripts *.ts *.mjs *.json README.md DEMO.md"
+    "format": "prettier --write app lib tests scripts *.ts *.mjs *.json README.md DEMO.md",
+    "db:setup": "node --env-file=.env.local --import tsx scripts/configure-database.ts",
+    "db:verify": "node --env-file=.env.local --import tsx scripts/verify-database.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.0",

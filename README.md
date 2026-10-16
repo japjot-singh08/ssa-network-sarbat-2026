@@ -65,7 +65,7 @@ Official integration references: [Anthropic TypeScript SDK](https://platform.cla
 
 No account, paid plan, or hosted infrastructure is created by this repository. Use a **dedicated demonstration Supabase project** first. Local file persistence is deliberately disabled on Vercel to prevent ephemeral or lost records.
 
-1. Create/select a Supabase project you control. Run `supabase/schema.sql` once in its SQL editor. The migration creates normalized tables, foreign keys, indexes, unique award/reaction constraints, and RLS policies. It is a fresh-install migration, not a repeatable upgrade script.
+1. Create/select a Supabase project you control. After saving its private pooler URI as `DATABASE_URL` in `.env.local`, you can run `npm run db:setup` to apply the schema and seed an empty database, then `npm run db:verify` to check access controls and rollback. These commands preserve existing application records and refuse a partial schema. Alternatively, run `supabase/schema.sql` once in its SQL editor. The migration creates normalized tables, foreign keys, indexes, unique award/reaction constraints, and RLS policies. It is a fresh-install migration, not a repeatable upgrade script.
 2. Copy the private PostgreSQL transaction-pooler connection URL to `DATABASE_URL` in `.env.local`. URL-encode special password characters. This URL is a server secret. Use the Supabase pooler host and port supplied by your dashboard; prepared statements are disabled in the adapter.
 3. Seed only an empty demonstration database:
 
@@ -128,7 +128,7 @@ Browser tests start an isolated production-mode server on port 3100 and use a te
 
 Unit tests cover human-only approval, idempotent awards, private evidence, revisions, role restrictions, score bounds, Toolkit retrieval, matching unknowns, safe URLs, signed sessions, caption moderation, file concurrency, and rollback. Browser tests cover the student/officer/reviewer journey, duplicate approval retries, resulting rankings, persistent Shabash, Toolkit search, missing-key behavior, cross-origin protection, and mobile overflow.
 
-**Requires external validation:** live Supabase connectivity and RLS behavior, real-account sign-in, live Claude quality/latency/billing, Punjabi/Pinglish extraction quality, and deployed Vercel workflows. No credentials were supplied for these checks. No audio transcription, binary upload, real payment processing, or video generation is included.
+**Requires external validation:** live Supabase connectivity and RLS behavior, real-account sign-in, live Claude quality/latency/billing, Punjabi/Pinglish extraction quality, and deployed Vercel workflows. The hosted Supabase connection, schema, seeded data, public/private access restrictions, and rollback have now been verified against the configured demo project. Supabase Auth, live Claude calls, and Vercel deployment remain unverified. No audio transcription, binary upload, real payment processing, or video generation is included.
 
 ## Five-minute demonstration
 
