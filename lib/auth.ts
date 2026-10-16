@@ -70,11 +70,7 @@ export async function getActor(): Promise<Actor> {
     }
   );
 }
-export function sameOrigin(req: Request) {
-  const origin = req.headers.get("origin");
-  if (!origin || origin !== new URL(req.url).origin)
-    throw new Error("A same-origin request is required.");
-}
+export { assertSameOrigin as sameOrigin } from "./request-origin";
 export async function body(req: Request) {
   const raw = await req.text();
   if (Buffer.byteLength(raw) > 90000) throw new Error("Request too large.");

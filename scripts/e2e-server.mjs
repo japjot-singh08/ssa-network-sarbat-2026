@@ -9,7 +9,7 @@ const child = spawn(
     "node_modules/next/dist/bin/next",
     "start",
     "--hostname",
-    "127.0.0.1",
+    "0.0.0.0",
     "-p",
     "3100",
   ],
