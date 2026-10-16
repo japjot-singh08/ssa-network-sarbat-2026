@@ -15,8 +15,20 @@ const tables = [
   "documents",
   "interests",
   "profiles",
+  "memberships",
+  "membershipApplications",
+  "chapterProposals",
+  "chapterResources",
+  "auditLogs",
 ] as const;
-const jsonFields = new Set(["skills", "commitments", "experience"]);
+const jsonFields = new Set([
+  "skills",
+  "commitments",
+  "experience",
+  "answers",
+  "details",
+  "onboarding",
+]);
 let client: ReturnType<typeof postgres> | undefined;
 function sqlClient() {
   return (client ??= postgres(process.env.DATABASE_URL!, {
@@ -52,7 +64,11 @@ export async function transaction<T>(
         const remaining = new Set(state[table].map((row) => row.id));
         for (const id of before.get(table)!.keys()) {
           if (!remaining.has(id)) {
-            if (table === "points" || table === "grants")
+            if (
+              table === "points" ||
+              table === "grants" ||
+              table === "auditLogs"
+            )
               throw new Error("Award ledger entries are immutable.");
             await tx`delete from ${tx(table)} where id = ${id}`;
           }
@@ -62,7 +78,10 @@ export async function transaction<T>(
         for (const row of state[table]) {
           const previous = before.get(table)!.get(row.id);
           if (previous === JSON.stringify(row)) continue;
-          if (previous && (table === "points" || table === "grants"))
+          if (
+            previous &&
+            (table === "points" || table === "grants" || table === "auditLogs")
+          )
             throw new Error("Award ledger entries are immutable.");
           const normalized = Object.fromEntries(
             Object.entries(row).map(([key, value]) => [
@@ -112,6 +131,8 @@ export async function transaction<T>(
       if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
       state = seed();
     }
+    for (const table of tables)
+      if (!state[table]) (state[table] as unknown[]) = [];
     const output = await fn(state);
     const tmp = path.join(
       dir,

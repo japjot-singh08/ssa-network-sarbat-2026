@@ -14,6 +14,11 @@ const tables = [
   "documents",
   "interests",
   "profiles",
+  "memberships",
+  "membershipApplications",
+  "chapterProposals",
+  "chapterResources",
+  "auditLogs",
 ] as const;
 async function main() {
   if (
@@ -60,8 +65,14 @@ async function main() {
           const values = Object.fromEntries(
             Object.entries(row).map(([key, value]) => [
               key,
-              ["skills", "commitments", "experience"].includes(key) &&
-              value !== null
+              [
+                "skills",
+                "commitments",
+                "experience",
+                "answers",
+                "details",
+                "onboarding",
+              ].includes(key) && value !== null
                 ? tx.json(value)
                 : value,
             ]),

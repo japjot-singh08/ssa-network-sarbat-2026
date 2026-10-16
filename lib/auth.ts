@@ -1,8 +1,11 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
-import { createClient } from "@supabase/supabase-js";
+import { verifiedUser } from "./supabase-auth";
+import { universityEmail } from "./university-email";
+import { actorFromProfile, ensureProfile } from "./membership";
+import { transaction } from "./store";
 import type { Actor } from "./types";
-import { readState } from "./store";
+
 const localSecret = randomBytes(32).toString("hex");
 export const demoMode = () =>
   process.env.DEMO_MODE === "true" ||
@@ -53,22 +56,35 @@ export async function getActor(): Promise<Actor> {
     if (session) return session;
     return { id: "guest", role: "STUDENT", chapterId: null };
   }
-  const token = jar.get("ssa-auth")?.value;
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL,
-    key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!token || !url || !key)
+  const user = await verifiedUser();
+  if (
+    !user ||
+    !user.email_confirmed_at ||
+    !user.email ||
+    !universityEmail(user.email)
+  )
     return { id: "guest", role: "STUDENT", chapterId: null };
-  const { data, error } = await createClient(url, key).auth.getUser(token);
-  if (error || !data.user)
-    return { id: "guest", role: "STUDENT", chapterId: null };
-  const state = await readState();
-  return (
-    state.profiles.find((p) => p.id === data.user.id) || {
-      id: data.user.id,
+  const identity = {
+    email: user.email,
+    name: String(user.user_metadata?.name || ""),
+    verified: true,
+  };
+  return transaction((s) => {
+    const profile = ensureProfile(s, {
+      id: user.id,
       role: "STUDENT",
       chapterId: null,
-    }
-  );
+      ...identity,
+    });
+    // Role metadata supplied at signup is never read as an authority.
+    profile.email = user.email!;
+    return actorFromProfile(
+      s,
+      profile,
+      identity,
+      jar.get("ssa-active-chapter")?.value,
+    );
+  });
 }
 export { assertSameOrigin as sameOrigin } from "./request-origin";
 export async function body(req: Request) {

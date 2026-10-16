@@ -16,10 +16,26 @@ export default defineConfig({
     ["html", { outputFolder: "work/playwright-report", open: "never" }],
   ],
   outputDir: "work/test-results",
-  webServer: {
-    command: "node scripts/e2e-server.mjs",
-    url: "http://localhost:3100/api/state",
-    reuseExistingServer: false,
-    timeout: 30000,
-  },
+  projects: [
+    { name: "demo", testIgnore: "**/auth.spec.ts" },
+    {
+      name: "real-auth",
+      testMatch: "**/auth.spec.ts",
+      use: { baseURL: "http://localhost:3101" },
+    },
+  ],
+  webServer: [
+    {
+      command: "node scripts/e2e-server.mjs",
+      url: "http://localhost:3100/api/state",
+      reuseExistingServer: false,
+      timeout: 30000,
+    },
+    {
+      command: "node scripts/e2e-server.mjs --real-auth",
+      url: "http://localhost:3101/api/state",
+      reuseExistingServer: false,
+      timeout: 30000,
+    },
+  ],
 });

@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import postgres from "postgres";
+import { migrateAccounts } from "../lib/migrate-accounts";
 import { seed } from "../lib/seed";
 import { transaction, closeStore } from "../lib/store";
 const names = [
@@ -46,6 +47,7 @@ async function main() {
         "Partial existing schema detected. Refusing to overwrite it.",
       );
     else console.log("Existing application schema found; preserving it.");
+    await migrateAccounts(sql);
     const seeded = await transaction((s) => {
       if (s.chapters.length) return false;
       if (Object.values(s).some((rows) => rows.length))

@@ -16,7 +16,9 @@
     "format": "prettier --write app lib tests scripts *.ts *.mjs *.json README.md DEMO.md",
     "db:setup": "node --env-file=.env.local --import tsx scripts/configure-database.ts",
     "db:verify": "node --env-file=.env.local --import tsx scripts/verify-database.ts",
-    "reset:demo": "node --env-file=.env.local --import tsx scripts/reset-demo.ts"
+    "reset:demo": "node --env-file=.env.local --import tsx scripts/reset-demo.ts",
+    "db:migrate:accounts": "node --env-file=.env.local --import tsx scripts/migrate-accounts.ts",
+    "account:grant": "node --env-file=.env.local --import tsx scripts/provision-account.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.0",

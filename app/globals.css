@@ -2090,3 +2090,190 @@ a:hover {
     font-size: 8px;
   }
 }
+/* Connected student, chapter, and national portals. */
+.sidebar {
+  overflow-y: auto;
+}
+.sidebar .nav-item {
+  flex-shrink: 0;
+}
+.compact-note {
+  display: none;
+}
+.portal-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 0 0 25px;
+}
+.portal-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 25px 0;
+}
+.portal-stats .panel b {
+  display: block;
+  font-size: 30px;
+  font-weight: 500;
+}
+.portal-stats .panel span {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.portal-section {
+  margin-top: 25px;
+}
+.portal-list-button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border-bottom: 1px solid var(--line);
+  padding: 18px 0;
+  color: var(--ink);
+}
+.portal-list-button > span {
+  flex: 1;
+}
+.portal-list-button small,
+.portal-list-line > span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 4px;
+}
+.portal-list-line {
+  border-bottom: 1px solid var(--line);
+  padding: 17px 0;
+  font-size: 12px;
+}
+.portal-list-line b {
+  display: block;
+}
+.portal-list-line p {
+  margin-top: 6px;
+}
+.application-answers {
+  margin: 20px 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.application-answers dt {
+  text-transform: capitalize;
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+.application-answers dd {
+  white-space: pre-wrap;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.portal-form {
+  margin-top: 25px;
+}
+.account-links {
+  margin: 20px 0;
+}
+.inline-icon {
+  display: inline;
+  vertical-align: middle;
+}
+.roster-scroll {
+  overflow: auto;
+}
+.roster {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 11px;
+  margin-top: 20px;
+}
+.roster th {
+  color: var(--muted);
+  font-weight: 500;
+}
+.roster td,
+.roster th {
+  padding: 13px 10px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.onboarding {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+}
+.onboarding li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 12px 0;
+}
+.portal-form textarea[rows="1"] {
+  min-height: 55px;
+}
+.sidebar nav {
+  gap: 3px;
+}
+.sidebar .nav-item {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.sidebar .nav-label {
+  margin-top: 30px;
+}
+.sidebar-bottom {
+  padding-top: 15px;
+}
+summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--green);
+  margin: 16px 0;
+}
+@media (max-width: 700px) {
+  .portal-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .portal-stats .panel {
+    padding: 17px;
+  }
+  .portal-stats .panel b {
+    font-size: 25px;
+  }
+  .portal-stats .panel span {
+    font-size: 10px;
+  }
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+  .application-answers {
+    grid-template-columns: 1fr;
+  }
+  .portal-actions .button {
+    font-size: 10px;
+  }
+  .sidebar .nav-item {
+    padding: 8px 14px;
+  }
+  .sidebar .nav-label {
+    margin-top: 20px;
+  }
+  .sidebar-bottom {
+    margin-top: 20px;
+  }
+  .portal-list-button {
+    font-size: 12px;
+  }
+}

@@ -412,7 +412,12 @@ export function matching(c: Challenge, chapters: Chapter[]) {
     .map((ch) => {
       let points = 0;
       const reasons: string[] = [];
-      if (c.lat !== null && c.lng !== null) {
+      if (
+        c.lat !== null &&
+        c.lng !== null &&
+        ch.lat !== null &&
+        ch.lng !== null
+      ) {
         const rad = (d: number) => (d * Math.PI) / 180;
         const a =
           Math.sin(rad(ch.lat - c.lat) / 2) ** 2 +

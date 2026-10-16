@@ -43,6 +43,7 @@ import {
   type Submission,
 } from "@/lib/types";
 import { matching, score, semester, submissionContext } from "@/lib/domain";
+import { AuthPanel, Portals } from "./portals";
 type View =
   | "home"
   | "arena"
@@ -51,7 +52,15 @@ type View =
   | "toolkit"
   | "sahayak"
   | "review"
-  | "chapter";
+  | "chapter"
+  | "dashboard"
+  | "directory"
+  | "applications"
+  | "start"
+  | "myssa"
+  | "admin"
+  | "profile"
+  | "password";
 const nav = [
   ["home", "Overview", Home],
   ["arena", "Arena", Compass],
@@ -167,18 +176,49 @@ export default function Network() {
     }
   }, []);
   useEffect(() => {
+    if (
+      location.hash.includes("access_token=") ||
+      location.hash.includes("error_description=")
+    ) {
+      location.replace("/auth/callback" + location.search + location.hash);
+      return;
+    }
     queueMicrotask(() => void refresh());
     const sync = () => {
       const v = new URLSearchParams(location.search).get("view");
       if (
         nav.some((n) => n[0] === v) ||
-        ["review", "chapter"].includes(v || "")
+        [
+          "review",
+          "chapter",
+          "dashboard",
+          "directory",
+          "applications",
+          "start",
+          "myssa",
+          "admin",
+          "profile",
+          "password",
+        ].includes(v || "")
       )
         setView(v as View);
     };
     queueMicrotask(sync);
     window.addEventListener("popstate", sync);
     return () => window.removeEventListener("popstate", sync);
+  }, [refresh]);
+  useEffect(() => {
+    const update = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    const timer = setInterval(update, 30000);
+    window.addEventListener("focus", update);
+    document.addEventListener("visibilitychange", update);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("focus", update);
+      document.removeEventListener("visibilitychange", update);
+    };
   }, [refresh]);
   useEffect(() => {
     if (!toast) return;
@@ -216,6 +256,20 @@ export default function Network() {
       setBusy(false);
     }
   };
+  const portalAct = async (data: unknown) => {
+    setBusy(true);
+    try {
+      const r = await request("/api/portal", data);
+      setToast(r.message);
+      await refresh();
+      return true;
+    } catch (e) {
+      setToast((e as Error).message);
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  };
   const session = async (data: unknown) => {
     setBusy(true);
     try {
@@ -233,7 +287,19 @@ export default function Network() {
   const totalPoints = state?.points.reduce((n, p) => n + p.amount, 0) || 0;
   const pageTitle =
     nav.find((n) => n[0] === view)?.[1] ||
-    (view === "review" ? "USM review desk" : "Chapter profile");
+    {
+      review: "USM review desk",
+      chapter: "Chapter profile",
+      dashboard: "My dashboard",
+      directory: "Explore Chapters",
+      applications: "My applications",
+      start: "Start a Chapter",
+      myssa: "My SSA",
+      admin: "USM administration",
+      profile: "My profile",
+      password: "Change password",
+    }[view as string] ||
+    "Your community";
   const showChallenge = (c: Challenge) => setDetail(c);
   const challengeCards = (items: Challenge[]) =>
     items.length ? (
@@ -359,6 +425,41 @@ export default function Network() {
         </button>
         <div className="nav-label">A SHARED PURPOSE</div>
         <nav>
+          {state.actor.id !== "guest" &&
+            [
+              ["dashboard", "My dashboard", Home],
+              ["myssa", "My SSA", Users],
+              ["applications", "My applications", BookOpen],
+              ["profile", "My profile", GraduationCap],
+            ].map(([id, label, Icon]) => {
+              const ItemIcon = Icon as typeof Home;
+              return (
+                <button
+                  key={String(id)}
+                  className={"nav-item " + (view === id ? "active" : "")}
+                  onClick={() => go(id as View)}
+                >
+                  <ItemIcon size={18} />
+                  {String(label)}
+                </button>
+              );
+            })}
+          <button
+            className={"nav-item " + (view === "directory" ? "active" : "")}
+            onClick={() => go("directory")}
+          >
+            <Users size={18} />
+            Explore Chapters
+          </button>
+          {state.actor.role === "ADMIN" && (
+            <button
+              className={"nav-item " + (view === "admin" ? "active" : "")}
+              onClick={() => go("admin")}
+            >
+              <ShieldCheck size={18} />
+              USM administration
+            </button>
+          )}
           {nav.map(([id, label, Icon]) => (
             <button
               className={"nav-item " + (view === id ? "active" : "")}
@@ -371,7 +472,11 @@ export default function Network() {
             </button>
           ))}
         </nav>
-        <div className="sidebar-note">
+        <div
+          className={
+            "sidebar-note " + (state.actor.id !== "guest" ? "compact-note" : "")
+          }
+        >
           <span className="tiny-star">✦</span>
           <h4>
             Small acts.
@@ -392,7 +497,14 @@ export default function Network() {
               <ShieldCheck size={18} /> USM review desk
             </button>
           )}
-          <button className="identity" onClick={() => setIdentity(true)}>
+          <button
+            className="identity"
+            onClick={() =>
+              !state.demo && state.actor.id !== "guest"
+                ? go("profile")
+                : setIdentity(true)
+            }
+          >
             <span className="avatar">
               {chapter ? "UW" : state.actor.role === "ADMIN" ? "U" : "S"}
             </span>
@@ -401,7 +513,7 @@ export default function Network() {
                 {chapter?.name ||
                   (state.actor.role === "ADMIN"
                     ? "USM reviewer"
-                    : "Student explorer")}
+                    : state.actor.name || "Student explorer")}
               </b>
               <small>
                 {state.demo ? "Demo identity" : "Account"} ·{" "}
@@ -430,16 +542,32 @@ export default function Network() {
             <span className="top-note">
               Sarbat da bhala · Well-being for all
             </span>
-            <button className="top-profile" onClick={() => setIdentity(true)}>
+            <button
+              className="top-profile"
+              onClick={() =>
+                !state.demo && state.actor.id !== "guest"
+                  ? go("profile")
+                  : setIdentity(true)
+              }
+            >
               <LogIn size={16} />
-              {state.actor.id === "guest" ? "Enter demo" : "Switch identity"}
+              {state.demo
+                ? state.actor.id === "guest"
+                  ? "Enter demo"
+                  : "Switch identity"
+                : state.actor.id === "guest"
+                  ? "Sign in / Join"
+                  : "My account"}
             </button>
           </div>
         </header>
-        {state.demo && (
+        {(state.demo || state.sampleData) && (
           <div className="demo-banner">
-            <span>DEMONSTRATION</span> Fictional chapters, opportunities, and
-            resources. Grant records are not payments.
+            <span>
+              {state.demo ? "DEMONSTRATION" : "SAMPLE CONTENT · REAL ACCOUNTS"}
+            </span>{" "}
+            Fictional chapters, opportunities, and resources. Grant records are
+            not payments.
           </div>
         )}
         <main className="content">
@@ -447,6 +575,24 @@ export default function Network() {
             <div className="alert" role="alert">
               {error}
             </div>
+          )}
+          {[
+            "dashboard",
+            "directory",
+            "applications",
+            "start",
+            "myssa",
+            "admin",
+            "profile",
+            "password",
+          ].includes(view) && (
+            <Portals
+              view={view}
+              state={state}
+              go={(v) => go(v as View)}
+              act={portalAct}
+              onSignIn={() => setIdentity(true)}
+            />
           )}
           {view === "home" && (
             <>
@@ -467,6 +613,22 @@ export default function Network() {
                 <Badge tone="outline">
                   <span className="live-dot" /> THE NATIONAL SSA COMMUNITY
                 </Badge>
+              </div>
+              <div className="portal-actions">
+                <button
+                  className="button"
+                  onClick={() =>
+                    go(state.actor.id === "guest" ? "directory" : "dashboard")
+                  }
+                >
+                  Join an SSA <ArrowRight size={16} />
+                </button>
+                <button
+                  className="button secondary"
+                  onClick={() => go("start")}
+                >
+                  Start a New SSA
+                </button>
               </div>
               <section className="hero">
                 <div className="hero-copy">
@@ -745,14 +907,14 @@ export default function Network() {
                       <Users />
                       <h3>Your chapter’s next chapter starts here.</h3>
                       <p>
-                        Choose a fictional officer identity to accept a
+                        Sign in as an authorized chapter officer to accept a
                         challenge and submit evidence.
                       </p>
                       <button
                         className="button"
                         onClick={() => setIdentity(true)}
                       >
-                        Choose demo identity
+                        Sign in / Account
                       </button>
                     </div>
                   ) : state.participations.filter(
@@ -1193,7 +1355,9 @@ export default function Network() {
       )}
       {identity && (
         <Modal
-          title={state.demo ? "Choose your demo identity" : "Sign in"}
+          title={
+            state.demo ? "Choose your demo identity" : "Welcome to SSA Network"
+          }
           close={() => setIdentity(false)}
         >
           {state.demo ? (
@@ -1259,7 +1423,13 @@ export default function Network() {
               </div>
             </form>
           ) : (
-            <SupabaseLogin session={session} />
+            <AuthPanel
+              onSignedIn={async () => {
+                await refresh();
+                setIdentity(false);
+                go("dashboard");
+              }}
+            />
           )}
         </Modal>
       )}
@@ -1310,7 +1480,13 @@ export default function Network() {
           </div>
           <div className="row wrap">
             <button
-              disabled={busy || detail.status !== "OPEN"}
+              disabled={
+                busy ||
+                detail.status !== "OPEN" ||
+                (!state.demo &&
+                  state.actor.id !== "guest" &&
+                  state.actor.role !== "OFFICER")
+              }
               className="button"
               onClick={async () => {
                 if (state.actor.role !== "OFFICER") {
@@ -1331,7 +1507,11 @@ export default function Network() {
                   p.challengeId === detail.id,
               )
                 ? "Open My Challenges"
-                : "Accept for my chapter"}{" "}
+                : !state.demo &&
+                    state.actor.id !== "guest" &&
+                    state.actor.role !== "OFFICER"
+                  ? "Chapter officer access required"
+                  : "Accept for my chapter"}{" "}
               <ArrowUpRight size={16} />
             </button>
             <button
@@ -1696,7 +1876,7 @@ function Sahayak({
           </span>
           {guest ? (
             <button type="button" className="button" onClick={onIdentity}>
-              Choose identity
+              Sign in
             </button>
           ) : (
             <button className="button" disabled={busy || !configured}>
@@ -1738,57 +1918,6 @@ function Sahayak({
         are drafts requiring your approval.
       </p>
     </div>
-  );
-}
-function SupabaseLogin({
-  session,
-}: {
-  session: (data: unknown) => Promise<void>;
-}) {
-  const [message, setMessage] = useState("");
-  return (
-    <form
-      onSubmit={async (e) => {
-        e.preventDefault();
-        const f = new FormData(e.currentTarget);
-        try {
-          const { createClient } = await import("@supabase/supabase-js");
-          const url = process.env.NEXT_PUBLIC_SUPABASE_URL,
-            key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-          if (!url || !key)
-            throw new Error("Supabase authentication is not configured.");
-          const { data, error } = await createClient(
-            url,
-            key,
-          ).auth.signInWithPassword({
-            email: String(f.get("email")),
-            password: String(f.get("password")),
-          });
-          if (error) throw error;
-          await session({ token: data.session.access_token });
-        } catch (e) {
-          setMessage((e as Error).message);
-        }
-      }}
-    >
-      <Field label="Email">
-        <input type="email" name="email" required autoComplete="username" />
-      </Field>
-      <Field label="Password">
-        <input
-          type="password"
-          name="password"
-          required
-          autoComplete="current-password"
-        />
-      </Field>
-      <button className="button">Sign in</button>
-      {message && <p role="alert">{message}</p>}
-      <p className="small muted">
-        USM provisions officer and reviewer accounts. Contact your coordinator
-        for access.
-      </p>
-    </form>
   );
 }
 function ReviewDesk({
@@ -2283,7 +2412,10 @@ function SubmissionReview({
           </>
         )}
         <Field label="Decision">
-          <select name="decision" defaultValue="NEEDS_INFO">
+          <select name="decision" defaultValue="" required>
+            <option value="" disabled>
+              Choose a review decision…
+            </option>
             <option value="NEEDS_INFO">Request more information</option>
             <option value="REJECTED">Reject submission</option>
             <option value="APPROVED">Approve and award</option>

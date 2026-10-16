@@ -14,7 +14,16 @@ async function main() {
       await tx`set local role anon`;
       return tx`select id from posts where status='PUBLISHED'`;
     });
-    for (const table of ["submissions", "grants", "profiles"]) {
+    for (const table of [
+      "submissions",
+      "grants",
+      "profiles",
+      "memberships",
+      "membershipApplications",
+      "chapterProposals",
+      "chapterResources",
+      "auditLogs",
+    ]) {
       let denied = false;
       try {
         await sql.begin(async (tx) => {
@@ -46,7 +55,7 @@ async function main() {
       JSON.stringify({
         hostedDatabaseVerified: true,
         publicPosts: publicPosts.length,
-        privateTablesDenied: 3,
+        privateTablesDenied: 8,
         rollbackVerified: true,
         uniqueAwardAndReactionConstraints: constraints.length,
       }),

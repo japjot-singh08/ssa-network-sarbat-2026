@@ -4,6 +4,10 @@ A working hackathon MVP for Sarbat Build Day 2026, built for United Sikh Movemen
 
 **Demonstration records are fictional.** University chapter names identify sample records, not official participation. Initial Toolkit resources are fictional examples, not USM documents. Grants are tracking records only; the app does not process payments. Scoring is a provisional demo configuration, not adopted USM policy.
 
+## Accounts and membership phase
+
+The application now includes native student signup, verified university accounts, private chapter portals, membership applications, and USM review of new chapter proposals. See [AUTHENTICATION.md](AUTHENTICATION.md) for the current setup, testing boundaries, email-delivery requirements, and authorized account provisioning. The original demo remains available at Git tag `demo-baseline-2026-10-16`.
+
 ## Run the demo
 
 Requires Node.js 22.13+ (tested on Node 24) and npm.
@@ -54,7 +58,7 @@ This requires `DEMO_MODE=true`, saves a private local snapshot under `.data/back
 - **Sahayak:** server-only official Anthropic SDK, lightweight keyword retrieval over approved Toolkit text, actionable advisory answers, source-ID validation, and links to only retrieved sources. Shows an honest setup state without an API key.
 - **Community requests:** reviewer-only Claude extraction from English, Punjabi, and Pinglish into editable fields; missing details require clarification; publication requires explicit human confirmation.
 - **Matching:** deterministic distance, region, skills, experience, availability, and calendar factors. Unknown calendars, exams, and coordinates stay explicitly unknown.
-- **Accounts:** signed demonstration sessions; Supabase Auth password sign-in when demo mode is disabled; server-provisioned officer and administrator roles.
+- **Accounts:** signed demonstration sessions; Supabase Auth signup/sign-in/sign-out/reset and verified university accounts when demo mode is disabled; protected membership-based officer and operator-provisioned administrator roles.
 
 ## Configure Claude
 
@@ -89,19 +93,9 @@ No account, paid plan, or hosted infrastructure is created by this repository. U
 5. Configure Vercel environment variables: `DATABASE_URL`, `SESSION_SECRET` (at least 32 random characters), `DEMO_MODE=true`, and a long private `DEMO_REVIEWER_PASSCODE`. Optionally configure `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL`. Keep the reviewer passcode private. Anonymous public visitors can browse and select fictional student/officer identities, but cannot become reviewers without the passcode.
 6. Deploy and repeat the complete demo journey on the deployed URL. Confirm refresh persistence, duplicate approval protection, and AI citations with your actual account. Those external integrations cannot be certified without credentials.
 
-### Real accounts, after the demonstration
+### Real accounts and chapter membership
 
-Set `DEMO_MODE=false`. Configure `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` at build time and runtime. The anon key is intentionally public; the database URL and Anthropic key must never use a `NEXT_PUBLIC_` prefix. Create accounts through the Supabase dashboard. USM must provision officer/admin profiles using trusted SQL, for example:
-
-```sql
-insert into profiles(id, role, "chapterId")
-values ('AUTH-USER-UUID', 'OFFICER', 'uw');
--- Administrator: role = 'ADMIN', chapterId = null.
-```
-
-Unprovisioned authenticated users receive student access. There is no client-side role write policy. Public clients can read only public chapters, challenges, points, resources, published posts, and their own profile. Evidence, grants, and private profiles are not directly readable through Supabase's public API. Next.js independently checks authentication and authorization for every mutation. It validates the Supabase access token with `getUser`; an expired token requires signing in again. No automatic token refresh or self-service account enrollment is provided.
-
-Before operating with real students, USM needs to approve scoring, grant eligibility and reviewer procedures, establish privacy/retention policies, verify chapter sizes, and assign real account ownership. No actual nonprofit governance rules have been changed.
+Set `DEMO_MODE=false` and configure `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` server-side. Run `npm run db:migrate:accounts` before starting the extended app. See [AUTHENTICATION.md](AUTHENTICATION.md) for signup, email confirmation, password resets, refresh sessions, role provisioning, chapter membership, private rosters, and new-chapter approval. Email confirmation stays required. Actual successful sign-in verification needs a human-controlled university inbox; the configured project currently uses Supabase's limited default email sender.
 
 ## Architecture and integrity
 

@@ -241,6 +241,11 @@ export function seed(): State {
     reactions: [],
     interests: [],
     profiles: [],
+    memberships: [],
+    membershipApplications: [],
+    chapterProposals: [],
+    chapterResources: [],
+    auditLogs: [],
     documents: [
       {
         id: "langar",

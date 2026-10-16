@@ -2,6 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawn } from "node:child_process";
+const real = process.argv.includes("--real-auth");
 const dir = await mkdtemp(join(tmpdir(), "ssa-e2e-"));
 const child = spawn(
   process.execPath,
@@ -11,13 +12,13 @@ const child = spawn(
     "--hostname",
     "0.0.0.0",
     "-p",
-    "3100",
+    real ? "3101" : "3100",
   ],
   {
     stdio: "inherit",
     env: {
       ...process.env,
-      DEMO_MODE: "true",
+      DEMO_MODE: real ? "false" : "true",
       DEMO_DATA_DIR: dir,
       DATABASE_URL: "",
       ANTHROPIC_API_KEY: "",

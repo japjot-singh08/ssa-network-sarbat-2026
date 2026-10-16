@@ -27,13 +27,14 @@ export async function POST(req: Request) {
     if (input.logout) {
       jar.delete("ssa-demo");
       jar.delete("ssa-auth");
+      jar.delete("ssa-refresh");
+      jar.delete("ssa-active-chapter");
       return Response.json({ message: "Signed out." });
     }
-    if (!demoMode()) {
-      if (!input.token) throw new Error("Sign in through Supabase.");
-      jar.set("ssa-auth", input.token, options);
-      return Response.json({ message: "Signed in." });
-    }
+    if (!demoMode())
+      throw new Error(
+        "Use real university sign-in. Demo identities are disabled.",
+      );
     const role = input.role || "STUDENT";
     if (role === "ADMIN") {
       const pass = process.env.DEMO_REVIEWER_PASSCODE;

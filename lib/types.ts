@@ -19,7 +19,15 @@ export const resourceCategories = [
   "Other",
 ] as const;
 export type Role = "STUDENT" | "OFFICER" | "ADMIN";
-export type Actor = { id: string; role: Role; chapterId: string | null };
+export type Actor = {
+  id: string;
+  role: Role;
+  chapterId: string | null;
+  email?: string;
+  name?: string;
+  verified?: boolean;
+  managedChapterIds?: string[];
+};
 export type Chapter = {
   id: string;
   name: string;
@@ -31,8 +39,16 @@ export type Chapter = {
   availability: string | null;
   commitments: string[] | null;
   experience: string[];
-  lat: number;
-  lng: number;
+  lat: number | null;
+  lng: number | null;
+  publicContact?: string | null;
+  logoUrl?: string | null;
+  applicationsOpen?: boolean;
+  state?: string;
+  isSample?: boolean;
+  networkStatus?: string;
+  universityRecognition?: string;
+  onboarding?: string[];
   bio: string;
 };
 export type Challenge = {
@@ -119,7 +135,15 @@ export type Document = {
   sample: boolean;
 };
 export type Interest = { id: string; userId: string; challengeId: string };
-export type Profile = { id: string; role: Role; chapterId: string | null };
+export type Profile = {
+  id: string;
+  role: Role;
+  chapterId: string | null;
+  name?: string;
+  email?: string;
+  academicYear?: string;
+  major?: string;
+};
 export type State = {
   chapters: Chapter[];
   challenges: Challenge[];
@@ -132,9 +156,74 @@ export type State = {
   documents: Document[];
   interests: Interest[];
   profiles: Profile[];
+  memberships: Membership[];
+  membershipApplications: MembershipApplication[];
+  chapterProposals: ChapterProposal[];
+  chapterResources: ChapterResource[];
+  auditLogs: AuditLog[];
 };
 export type PublicState = State & {
   actor: Actor;
   demo: boolean;
   aiConfigured: boolean;
+  sampleData?: boolean;
+  memberCounts?: Record<string, number>;
+  networkStats?: {
+    students: number;
+    chapters: number;
+    pendingChapters: number;
+    pendingEvidence: number;
+    completed: number;
+  };
+};
+
+export type ApplicationStatus =
+  "DRAFT" | "PENDING" | "CHANGES_REQUESTED" | "APPROVED" | "DECLINED";
+export type Membership = {
+  id: string;
+  userId: string;
+  chapterId: string;
+  role: "MEMBER" | "OFFICER";
+  status: "ACTIVE";
+  createdAt: string;
+};
+export type MembershipApplication = {
+  id: string;
+  userId: string;
+  chapterId: string;
+  status: ApplicationStatus;
+  answers: Record<string, string>;
+  formVersion: number;
+  reviewNote: string;
+  reviewerId: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+export type ChapterProposal = {
+  id: string;
+  userId: string;
+  universityKey: string;
+  status: ApplicationStatus;
+  details: Record<string, string>;
+  chapterId: string | null;
+  reviewNote: string;
+  reviewerId: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+export type ChapterResource = {
+  id: string;
+  chapterId: string;
+  title: string;
+  content: string;
+  url: string | null;
+  createdAt: string;
+};
+export type AuditLog = {
+  id: string;
+  actorId: string;
+  action: string;
+  targetId: string;
+  chapterId: string | null;
+  createdAt: string;
 };
