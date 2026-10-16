@@ -33,6 +33,16 @@ npm run start
 
 Build and dev use webpack for compatibility with environments that restrict Turbopack worker sockets. No external fonts or image services are required.
 
+## Restore the original demonstration records
+
+For a configured **demonstration** database, stop other testing and run:
+
+```sh
+npm run reset:demo -- --confirm-demo-reset
+```
+
+This requires `DEMO_MODE=true`, saves a private local snapshot under `.data/backups`, and replaces application records atomically with the original fictional seed. It refuses to run if provisioned real-account profiles exist. It never deletes Supabase Auth accounts. The restored seed includes one Stanford achievement with 223 points; test submissions, other awards, grants, and reactions are removed. This is an intentional reset, not a production administration tool. Backups and credentials are excluded from Git and the source ZIP.
+
 ## What works
 
 - **Arena:** search, category/type/region/reward/deadline/status filters, full requirements, interest saving, officer acceptance, My Challenges, and evidence submission.
