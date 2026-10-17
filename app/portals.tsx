@@ -1,4 +1,5 @@
 "use client";
+import { ImageUpload } from "./image-upload";
 import Image from "next/image";
 import { ChapterMap } from "./chapter-map";
 import publicDirectory from "@/lib/usm-directory.json";
@@ -1479,7 +1480,15 @@ function AnswerList({ values }: { values: Record<string, string> }) {
       {Object.entries(values).map(([key, value]) => (
         <div key={key}>
           <dt>{key.replace(/([A-Z])/g, " $1")}</dt>
-          <dd>{value || "Not provided"}</dd>
+          <dd>
+            {/^\/api\/media\/[a-f0-9-]{36}\?key=[a-f0-9]{64}$/.test(value) ? (
+              <a href={value} target="_blank" rel="noreferrer">
+                Open supporting evidence
+              </a>
+            ) : (
+              value || "Not provided"
+            )}
+          </dd>
         </div>
       ))}
     </dl>
@@ -1666,6 +1675,7 @@ function ClaimChapter({
   onSignIn: () => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const claim = state.chapterProposals.find(
     (p) =>
       p.userId === state.actor.id &&
@@ -1702,6 +1712,7 @@ function ClaimChapter({
                 chapterId: chapter.id,
                 position: String(f.get("position")),
                 evidence: String(f.get("evidence")),
+                evidenceFile: String(f.get("evidenceFile") || ""),
                 confirmed: f.get("confirmed") === "on",
               });
             } finally {
@@ -1731,6 +1742,11 @@ function ClaimChapter({
               defaultValue={claim?.details.evidence || ""}
             />
           </Field>
+          <ImageUpload
+            allowPdf
+            name="evidenceFile"
+            onBusyChange={setUploading}
+          />
           <label className="check-line">
             <input type="checkbox" name="confirmed" required /> I currently
             serve on this chapter’s executive board and understand USM must
@@ -1739,7 +1755,7 @@ function ClaimChapter({
           <p className="small muted">
             Your evidence is private to you and USM reviewers.
           </p>
-          <button className="button" disabled={busy}>
+          <button className="button" disabled={busy || uploading}>
             {busy ? "Submitting…" : "Submit chapter claim"}
           </button>
         </form>

@@ -4,23 +4,32 @@ import { useState, useEffect } from "react";
 export function ImageUpload({
   name = "imageUrl",
   onBusyChange,
+  allowPdf = false,
 }: {
   name?: string;
+  allowPdf?: boolean;
   onBusyChange?: (busy: boolean) => void;
 }) {
   const [url, setUrl] = useState(""),
     [busy, setBusy] = useState(false),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [isPdf, setIsPdf] = useState(false);
   useEffect(() => {
     onBusyChange?.(busy);
   }, [busy, onBusyChange]);
   return (
     <div className="image-upload">
       <label className="field">
-        <span>Optional picture</span>
+        <span>
+          {allowPdf ? "Upload evidence (PDF or image)" : "Optional picture"}
+        </span>
         <input
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept={
+            allowPdf
+              ? "application/pdf,image/jpeg,image/png,image/webp"
+              : "image/jpeg,image/png,image/webp"
+          }
           disabled={busy}
           onChange={async (e) => {
             const file = e.target.files?.[0];
@@ -30,6 +39,22 @@ export function ImageUpload({
             setUrl("");
             let objectUrl = "";
             try {
+              setIsPdf(false);
+              if (allowPdf && file.type === "application/pdf") {
+                if (file.size > 3000000)
+                  throw new Error("Use a PDF smaller than 3 MB.");
+                const response = await fetch("/api/media", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/pdf" },
+                  body: file,
+                });
+                const result = await response.json();
+                if (!response.ok)
+                  throw new Error(result.error || "Upload failed.");
+                setIsPdf(true);
+                setUrl(result.url);
+                return;
+              }
               if (file.size > 12000000)
                 throw new Error("Choose a picture smaller than 12 MB.");
               objectUrl = URL.createObjectURL(file);
@@ -74,7 +99,7 @@ export function ImageUpload({
         />
       </label>
       <input type="hidden" name={name} value={url} />
-      {busy && <p role="status">Preparing and uploading picture…</p>}
+      {busy && <p role="status">Preparing and uploading file…</p>}
       {error && (
         <p role="alert" className="alert">
           {error}
@@ -82,27 +107,35 @@ export function ImageUpload({
       )}
       {url && (
         <>
-          <Image
-            src={url}
-            alt="Uploaded picture preview"
-            width={600}
-            height={400}
-            unoptimized
-            className="post-photo"
-          />
+          {isPdf ? (
+            <a href={url} target="_blank" rel="noreferrer">
+              Download uploaded PDF
+            </a>
+          ) : (
+            <Image
+              src={url}
+              alt="Uploaded picture preview"
+              width={600}
+              height={400}
+              unoptimized
+              className="post-photo"
+            />
+          )}
           <button
             type="button"
             className="text-button"
             onClick={() => setUrl("")}
           >
-            Remove picture
+            Remove file
           </button>
         </>
       )}
       <p className="small muted">
-        Only upload pictures you have permission to share. Avoid private student
-        or recipient information. Pictures appear in Arena or the feed after
-        publication; anyone with the image link can view it.
+        Only upload files you have permission to share. Avoid private student or
+        recipient information. Anyone with the full file link can view it.{" "}
+        {allowPdf
+          ? "PDFs: up to 3 MB. Images are resized before upload. Keep the link within your reviewer workflow."
+          : "Pictures appear in Arena or the feed after publication."}
       </p>
     </div>
   );

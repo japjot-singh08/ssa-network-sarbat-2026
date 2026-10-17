@@ -195,6 +195,7 @@ export default function Network() {
     [status, setStatus] = useState("OPEN"),
     [arenaTab, setArenaTab] = useState("Discover"),
     [term, setTerm] = useState("Fall 2026");
+  const [evidenceUploading, setEvidenceUploading] = useState(false);
   const refresh = useCallback(async () => {
     try {
       setState(await request("/api/state"));
@@ -1961,8 +1962,8 @@ export default function Network() {
         >
           <p>
             Evidence stays in the reviewer workflow. Do not include private
-            student or recipient data. Share a document or image link with
-            reviewer access; files are not uploaded to this demo.
+            student or recipient data. Upload a PDF or picture, or share a
+            supporting link. Keep sensitive personal data out of evidence.
           </p>
           <form
             onSubmit={async (e) => {
@@ -1975,7 +1976,7 @@ export default function Network() {
                   summary: f.get("summary"),
                   impact: f.get("impact"),
                   evidence: f.get("evidence"),
-                  attachment: f.get("attachment"),
+                  attachment: f.get("uploadedEvidence") || f.get("attachment"),
                   participants: Number(f.get("participants")),
                   hours: Number(f.get("hours")),
                 })
@@ -2001,6 +2002,11 @@ export default function Network() {
                 />
               </Field>
             ))}
+            <ImageUpload
+              allowPdf
+              name="uploadedEvidence"
+              onBusyChange={setEvidenceUploading}
+            />
             <Field label="Optional document or image URL">
               <input type="url" name="attachment" placeholder="https://…" />
             </Field>
@@ -2025,7 +2031,7 @@ export default function Network() {
                 />
               </Field>
             </div>
-            <button className="button" disabled={busy}>
+            <button className="button" disabled={busy || evidenceUploading}>
               Submit for human review <ArrowRight size={16} />
             </button>
           </form>
@@ -2867,7 +2873,7 @@ function SubmissionReview({
       <h4>Impact</h4>
       <p className="preserve">{s.impact}</p>
       <h4>Evidence</h4>
-      <p className="preserve">{s.evidence}</p>
+      <EvidenceText value={s.evidence} />
       {s.attachment && (
         <a
           className="text-button"
@@ -3199,6 +3205,7 @@ function IndividualChallenges({
     (p) => p.userId === state.actor.id,
   );
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
   return (
     <section className="panel">
       <h2>My individual participation</h2>
@@ -3231,6 +3238,7 @@ function IndividualChallenges({
             {p.status === "COMPLETED" ? (
               <>
                 <p>{p.summary}</p>
+                <EvidenceText value={p.evidence} />
                 <p>{p.hours} self-reported hours · no chapter points awarded</p>
               </>
             ) : (
@@ -3245,6 +3253,7 @@ function IndividualChallenges({
                       participationId: p.id,
                       summary: String(f.get("summary")),
                       evidence: String(f.get("evidence")),
+                      evidenceFile: String(f.get("evidenceFile") || ""),
                       hours: Number(f.get("hours")),
                     });
                   } finally {
@@ -3258,6 +3267,11 @@ function IndividualChallenges({
                 <Field label="Completion notes or evidence">
                   <textarea name="evidence" required maxLength={4000} />
                 </Field>
+                <ImageUpload
+                  allowPdf
+                  name="evidenceFile"
+                  onBusyChange={setUploading}
+                />
                 <Field label="Your hours contributed">
                   <input
                     name="hours"
@@ -3268,7 +3282,7 @@ function IndividualChallenges({
                     required
                   />
                 </Field>
-                <button className="button" disabled={busy}>
+                <button className="button" disabled={busy || uploading}>
                   Record personal completion
                 </button>
               </form>
@@ -3277,5 +3291,23 @@ function IndividualChallenges({
         );
       })}
     </section>
+  );
+}
+
+function EvidenceText({ value }: { value: string }) {
+  return (
+    <p className="preserve">
+      {value
+        .split(/(\/api\/media\/[a-f0-9-]{36}\?key=[a-f0-9]{64})/)
+        .map((part, i) =>
+          part.startsWith("/api/media/") ? (
+            <a key={i} href={part} target="_blank" rel="noreferrer">
+              Open supporting evidence
+            </a>
+          ) : (
+            part
+          ),
+        )}
+    </p>
   );
 }

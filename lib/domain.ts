@@ -23,6 +23,7 @@ export const actionSchema = z.discriminatedUnion("action", [
     participationId: id,
     summary: text(4000),
     evidence: text(4000),
+    evidenceFile: mediaUrl.optional(),
     hours: z.number().min(0.5).max(10000),
   }),
   z.object({ action: z.literal("accept"), challengeId: id }),
@@ -33,7 +34,7 @@ export const actionSchema = z.discriminatedUnion("action", [
     summary: text(),
     impact: text(),
     evidence: text(6000),
-    attachment: z.union([web, z.literal("")]).optional(),
+    attachment: z.union([web, mediaUrl]).optional(),
     participants: z.number().int().min(1).max(1000),
     hours: z.number().min(0.5).max(10000),
   }),
@@ -190,7 +191,11 @@ export function apply(state: State, actor: Actor, action: Action) {
     Object.assign(p, {
       status: "COMPLETED",
       summary: action.summary,
-      evidence: action.evidence,
+      evidence:
+        action.evidence +
+        (action.evidenceFile
+          ? "\nSupporting file: " + action.evidenceFile
+          : ""),
       hours: action.hours,
     });
     return "Personal completion recorded as self-reported. This does not affect chapter rankings, grants, or verified impact totals.";

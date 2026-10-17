@@ -1,3 +1,4 @@
+import { mediaUrl } from "./media-validation";
 import { z } from "zod";
 import type { Actor, State, Profile } from "./types";
 const text = (max = 4000) => z.string().trim().min(1).max(max),
@@ -78,6 +79,7 @@ export const portalActionSchema = z.discriminatedUnion("action", [
     chapterId: id,
     position: text(150),
     evidence: text(4000).min(20),
+    evidenceFile: mediaUrl.optional(),
     confirmed: z.literal(true),
   }),
   z.object({
@@ -216,6 +218,7 @@ export function applyPortal(s: State, a: Actor, input: PortalAction) {
       university: c.university,
       position: input.position,
       evidence: input.evidence,
+      evidenceFile: input.evidenceFile || "",
       applicantEmail: profile.email || a.email || "Demo account",
       attestation:
         "Applicant confirms they currently serve on this chapter’s executive board.",
