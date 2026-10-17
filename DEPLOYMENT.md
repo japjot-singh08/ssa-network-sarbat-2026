@@ -1,6 +1,6 @@
 # Vercel pilot deployment
 
-Import the private GitHub repository and deploy `feature/accounts-memberships`. Preserve `main` and the original demo tag. Framework: Next.js. Root: repository root. Build: `npm run build`. Install: `npm ci`. Use Node 24.x.
+Import the private GitHub repository and deploy `deploy-pilot` (same tested code as `feature/accounts-memberships`). Preserve `main` and the original demo tag. Framework: Next.js. Root: repository root. Build: `npm run build`. Install: `npm ci`. Use Node 24.x.
 
 ## Server environment
 
