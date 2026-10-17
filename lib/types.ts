@@ -147,7 +147,17 @@ export type Profile = {
   academicYear?: string;
   major?: string;
 };
+export type CommunityRequest = {
+  id: string;
+  details: Record<string, string>;
+  assessment: Record<string, unknown> | null;
+  status: "PENDING" | "PUBLISHED" | "REJECTED";
+  reviewNote: string;
+  challengeId: string | null;
+  createdAt: string;
+};
 export type State = {
+  communityRequests: CommunityRequest[];
   chapters: Chapter[];
   challenges: Challenge[];
   participations: Participation[];
@@ -170,6 +180,7 @@ export type PublicState = State & {
   demo: boolean;
   aiConfigured: boolean;
   sampleData?: boolean;
+  impact?: { projects: number; hours: number; chapters: number };
   memberCounts?: Record<string, number>;
   networkStats?: {
     students: number;

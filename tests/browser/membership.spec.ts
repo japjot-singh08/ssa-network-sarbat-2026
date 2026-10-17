@@ -299,7 +299,7 @@ test("Sahayak formats Markdown safely", async ({ page }) => {
     route.fulfill({
       json: {
         answer:
-          "## Your event plan\n\n**Choose a host.**\n\n1. Confirm the date\n2. Assign volunteers\n\n<script>alert(1)</script>",
+          "## Your event plan\n\n**Choose a host.**\n\n1. Confirm the date\n2. Assign volunteers\n\n| Task | Owner |\n| --- | --- |\n| Confirm venue | Officer |\n\n<script>alert(1)</script>",
         citations: [],
       },
     }),
@@ -315,4 +315,8 @@ test("Sahayak formats Markdown safely", async ({ page }) => {
   );
   await expect(page.locator(".markdown-answer li")).toHaveCount(2);
   await expect(page.locator(".markdown-answer script")).toHaveCount(0);
+  await expect(page.locator(".markdown-answer table")).toHaveCount(1);
+  await expect(page.locator(".markdown-answer td").first()).toHaveText(
+    "Confirm venue",
+  );
 });

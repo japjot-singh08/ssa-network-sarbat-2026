@@ -1,3 +1,4 @@
+import { verifiedImpact } from "@/lib/impact";
 import { getActor, demoMode, fail } from "@/lib/auth";
 import { readState } from "@/lib/store";
 import { visibleState } from "@/lib/domain";
@@ -13,6 +14,7 @@ export async function GET() {
         ...portalVisible(state, actor),
         sampleData: state.chapters.some((c) => c.isSample !== false),
         actor,
+        impact: verifiedImpact(state),
         demo: demoMode(),
         aiConfigured: !!process.env.ANTHROPIC_API_KEY,
       },

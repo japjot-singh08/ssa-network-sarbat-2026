@@ -247,6 +247,7 @@ export function seed(): State {
     chapterProposals: [],
     chapterResources: [],
     auditLogs: [],
+    communityRequests: [],
     documents: [
       {
         id: "langar",

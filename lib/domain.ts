@@ -51,6 +51,7 @@ export const actionSchema = z.discriminatedUnion("action", [
   }),
   z.object({
     action: z.literal("publish"),
+    communityRequestId: z.string().max(100).optional(),
     title: text(150),
     description: text(),
     organization: text(200),
@@ -338,8 +339,19 @@ export function apply(state: State, actor: Actor, action: Action) {
   }
   if (action.action === "publish") {
     admin();
-    const { action: _, ...fields } = action;
+    const intake = action.communityRequestId
+      ? state.communityRequests.find((r) => r.id === action.communityRequestId)
+      : undefined;
+    need(!action.communityRequestId || intake, "Community request not found.");
+    if (intake?.status === "PUBLISHED")
+      return "Already published; no duplicate challenge created.";
+    need(
+      !intake || intake.status === "PENDING",
+      "Only pending requests can be published.",
+    );
+    const { action: _, communityRequestId, ...fields } = action;
     void _;
+    void communityRequestId;
     state.challenges.push({
       ...fields,
       id: uid(),
@@ -349,6 +361,11 @@ export function apply(state: State, actor: Actor, action: Action) {
       status: "OPEN",
       createdAt: now,
     });
+    if (intake) {
+      intake.status = "PUBLISHED";
+      intake.challengeId = state.challenges.at(-1)!.id;
+      intake.reviewNote = "Published after human confirmation.";
+    }
     return "Challenge published after reviewer confirmation.";
   }
   if (action.action === "import") {
@@ -379,6 +396,8 @@ export function visibleState(state: State, actor: Actor): State {
   return {
     ...state,
     profiles: [],
+    communityRequests:
+      actor.role === "ADMIN" ? state.communityRequests || [] : [],
     submissions: state.submissions.filter(
       (s) =>
         actor.role === "ADMIN" ||

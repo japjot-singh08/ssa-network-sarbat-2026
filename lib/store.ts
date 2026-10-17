@@ -20,8 +20,10 @@ const tables = [
   "chapterProposals",
   "chapterResources",
   "auditLogs",
+  "communityRequests",
 ] as const;
 const jsonFields = new Set([
+  "assessment",
   "skills",
   "commitments",
   "experience",

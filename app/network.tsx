@@ -45,6 +45,7 @@ import {
 } from "@/lib/types";
 import { matching, score, semester, submissionContext } from "@/lib/domain";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { AuthPanel, Portals } from "./portals";
 type View =
   | "home"
@@ -181,6 +182,8 @@ export default function Network() {
       document.removeEventListener("keydown", escape);
     };
   }, [accountOpen]);
+  const [communityOpen, setCommunityOpen] = useState(false);
+  const [newOpportunity, setNewOpportunity] = useState(false);
   const [q, setQ] = useState(""),
     [category, setCategory] = useState("All categories"),
     [type, setType] = useState("All types"),
@@ -828,6 +831,49 @@ export default function Network() {
                 title="Find a cause. Make your mark."
                 description="Real community needs. Shared national challenges. One place to turn seva into action."
               />
+              <section
+                className="arena-impact"
+                aria-label="Verified community impact"
+              >
+                <div>
+                  <b>{state.impact?.projects || 0}</b>
+                  <span>Completed community projects</span>
+                </div>
+                <div>
+                  <b>{state.impact?.hours || 0}</b>
+                  <span>Human-verified service hours</span>
+                </div>
+                <div>
+                  <b>{state.impact?.chapters || 0}</b>
+                  <span>Chapters contributing</span>
+                </div>
+                <p>
+                  Approved work on real opportunities. Fictional sample
+                  challenges are excluded.
+                </p>
+              </section>
+              <div className="portal-actions">
+                <button
+                  className="button"
+                  onClick={() => setCommunityOpen(true)}
+                >
+                  Request community help
+                </button>
+                {state.actor.role === "ADMIN" && (
+                  <button
+                    className="button secondary"
+                    onClick={() => {
+                      setNewOpportunity(true);
+                      go("review");
+                    }}
+                  >
+                    Add an Arena opportunity
+                  </button>
+                )}
+                <button className="text-button" onClick={() => go("sahayak")}>
+                  Plan a project with Sahayak <ArrowRight size={16} />
+                </button>
+              </div>
               <div className="tabs">
                 {["Discover", "My Challenges"].map((t) => (
                   <button
@@ -1428,7 +1474,13 @@ export default function Network() {
           )}
           {view === "review" &&
             (state.actor.role === "ADMIN" ? (
-              <ReviewDesk state={state} act={act} busy={busy} />
+              <ReviewDesk
+                state={state}
+                act={act}
+                busy={busy}
+                onRefresh={refresh}
+                startTab={newOpportunity ? "Community requests" : "Submissions"}
+              />
             ) : (
               <div className="empty">
                 <ShieldCheck />
@@ -1514,6 +1566,14 @@ export default function Network() {
             <X size={16} />
           </button>
         </div>
+      )}
+      {communityOpen && (
+        <Modal
+          title="What does your community need?"
+          close={() => setCommunityOpen(false)}
+        >
+          <CommunityHelpForm />
+        </Modal>
       )}
       {identity && (
         <Modal
@@ -2018,7 +2078,8 @@ function Sahayak({
       <div className="eyebrow">MEET SAHAYAK</div>
       <h1>What are you planning?</h1>
       <p className="muted">
-        Ask Sahayak. Start with the guides. Make it your own.
+        Plan meaningful seva with live Arena opportunities and sourced Toolkit
+        guidance.
       </p>
       {!configured && (
         <div className="notice">
@@ -2031,10 +2092,10 @@ function Sahayak({
       )}
       <div className="prompt-grid">
         {[
-          "How do we organize a langar seva event?",
-          "Help me draft a campus event budget.",
+          "Help us plan a community seva challenge and collect evidence of its impact.",
+          "Which Arena opportunities involve education or technology?",
           "Write a draft sponsorship email.",
-          "What should a new SSA president do first?",
+          "Turn our volunteer idea into a clear community help request.",
         ].map((p) => (
           <button key={p} onClick={() => setQuestion(p)}>
             {p}
@@ -2054,7 +2115,8 @@ function Sahayak({
         />
         <div className="row between">
           <span>
-            <BookOpen size={14} /> Searches approved Toolkit sources
+            <BookOpen size={14} /> Uses Arena requirements and approved Toolkit
+            sources
           </span>
           {guest ? (
             <button type="button" className="button" onClick={onIdentity}>
@@ -2081,7 +2143,12 @@ function Sahayak({
         <article className="panel answer">
           <Badge tone="green">Sahayak · Advisory guidance</Badge>
           <div className="markdown-answer">
-            <ReactMarkdown skipHtml>{answer}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} skipHtml>
+              {answer.replace(
+                /^```(?:markdown|md)?\s*\n([\s\S]*?)\n```\s*$/,
+                "$1",
+              )}
+            </ReactMarkdown>
           </div>
           <h4>Retrieved sources used</h4>
           {citations.length ? (
@@ -2108,18 +2175,24 @@ function ReviewDesk({
   state,
   act,
   busy,
+  onRefresh,
+  startTab,
 }: {
   state: PublicState;
   act: (data: unknown) => Promise<boolean>;
   busy: boolean;
+  onRefresh: () => Promise<void>;
+  startTab: string;
 }) {
-  const [tab, setTab] = useState("Submissions"),
+  const [tab, setTab] = useState(startTab),
+    [requestId, setRequestId] = useState<string | undefined>(),
     [extract, setExtract] = useState(""),
     [extractBusy, setExtractBusy] = useState(false),
     [extractError, setExtractError] = useState(""),
     [draft, setDraft] = useState<Record<string, unknown>>({}),
     [missing, setMissing] = useState<string[]>([]);
   const extractRequest = async () => {
+    setRequestId(undefined);
     setExtractBusy(true);
     setExtractError("");
     try {
@@ -2196,7 +2269,32 @@ function ReviewDesk({
       )}
       {tab === "Community requests" && (
         <div className="panel">
-          <h2>From a real need to a clear next step.</h2>
+          <CommunityInbox
+            state={state}
+            refresh={onRefresh}
+            onDraft={(id, assessment) => {
+              setRequestId(id);
+              setDraft(assessment);
+              setMissing((assessment.missingInformation || []) as string[]);
+            }}
+          />
+          <h2>
+            {requestId
+              ? "Review and publish this community request"
+              : "Add an Arena opportunity"}
+          </h2>
+          {requestId && (
+            <button
+              className="text-button"
+              onClick={() => {
+                setRequestId(undefined);
+                setDraft({});
+                setMissing([]);
+              }}
+            >
+              Start a separate opportunity
+            </button>
+          )}
           <p className="muted">
             Paste English, Punjabi, or Pinglish. Claude extracts a draft; you
             confirm every fact before publishing. Missing facts need
@@ -2234,6 +2332,20 @@ function ReviewDesk({
               Needs clarification: {missing.join("; ")}
             </div>
           )}
+          {Array.isArray(draft.concerns) && (
+            <div className="notice">
+              <b>AI concerns to check:</b>{" "}
+              {(draft.concerns as string[]).join("; ") ||
+                "None flagged. This does not establish legitimacy."}
+              <ul>
+                {((draft.verificationSteps || []) as string[]).map(
+                  (step, i) => (
+                    <li key={i}>{step}</li>
+                  ),
+                )}
+              </ul>
+            </div>
+          )}
           <hr />
           <form
             key={JSON.stringify(draft)}
@@ -2245,6 +2357,7 @@ function ReviewDesk({
                 await act({
                   ...data,
                   action: "publish",
+                  communityRequestId: requestId,
                   points: Number(f.get("points")),
                   grant: Number(f.get("grant")),
                   sample: f.get("sample") === "on",
@@ -2258,6 +2371,7 @@ function ReviewDesk({
                 })
               ) {
                 setDraft({});
+                setRequestId(undefined);
                 setExtract("");
                 setMissing([]);
               }
@@ -2395,7 +2509,9 @@ function ReviewDesk({
                   name={name}
                   required
                   defaultValue={
-                    name === "eligibility" ? String(draft.skills || "") : ""
+                    name === "eligibility"
+                      ? String(draft.skills || "")
+                      : String(draft[name] || "")
                   }
                 />
               </Field>
@@ -2644,5 +2760,220 @@ function SubmissionReview({
         </button>
       </form>
     </article>
+  );
+}
+
+function CommunityHelpForm() {
+  const [busy, setBusy] = useState(false),
+    [message, setMessage] = useState(""),
+    [error, setError] = useState("");
+  return (
+    <>
+      <p>
+        Gurdwaras, nonprofits, campus groups, and community members can request
+        volunteers or project help. USM reviews every request before it appears
+        in Arena. No account is needed.
+      </p>
+      {message ? (
+        <div role="status" className="notice">
+          {message}
+        </div>
+      ) : (
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const form = e.currentTarget;
+            const f = new FormData(form);
+            setBusy(true);
+            setError("");
+            try {
+              const r = await request("/api/community", {
+                action: "submit",
+                ...Object.fromEntries(f),
+              });
+              setMessage(r.message);
+              form.reset();
+            } catch (e) {
+              setError((e as Error).message);
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          <Field label="Organization or community group">
+            <input name="organization" required minLength={2} maxLength={200} />
+          </Field>
+          <Field label="Project location">
+            <input
+              name="location"
+              required
+              minLength={2}
+              maxLength={200}
+              placeholder="City, state, and venue if known"
+            />
+          </Field>
+          <Field label="Contact email (private to USM)">
+            <input name="contactEmail" type="email" required maxLength={250} />
+          </Field>
+          <Field label="Describe the help needed">
+            <textarea
+              name="message"
+              required
+              minLength={30}
+              maxLength={8000}
+              placeholder="What needs doing? Who benefits? Include any date, volunteer count, skills, accessibility needs, and a way to verify the request. English, Punjabi, or Pinglish welcome."
+            />
+          </Field>
+          <input
+            name="website"
+            aria-hidden="true"
+            tabIndex={-1}
+            autoComplete="off"
+            className="intake-honeypot"
+          />
+          <p className="small muted">
+            Keep private student information and sensitive details out of the
+            description. AI can help structure the request; a human must confirm
+            the organizer and approve publication.
+          </p>
+          {error && (
+            <p className="alert" role="alert">
+              {error}
+            </p>
+          )}
+          <button className="button" disabled={busy}>
+            {busy ? "Sending…" : "Send request to USM"}
+          </button>
+        </form>
+      )}
+    </>
+  );
+}
+function CommunityInbox({
+  state,
+  refresh,
+  onDraft,
+}: {
+  state: PublicState;
+  refresh: () => Promise<void>;
+  onDraft: (id: string, assessment: Record<string, unknown>) => void;
+}) {
+  const [busy, setBusy] = useState(""),
+    [error, setError] = useState("");
+  return (
+    <section className="community-inbox">
+      <h2>Community request inbox</h2>
+      <p>
+        AI identifies gaps and concerns; it cannot establish legitimacy.
+        Independently verify the organizer before publication.
+      </p>
+      {error && (
+        <p role="alert" className="alert">
+          {error}
+        </p>
+      )}
+      {(state.communityRequests || [])
+        .filter((r) => r.status === "PENDING")
+        .map((r) => (
+          <article className="panel" key={r.id}>
+            <Badge>Pending human review</Badge>
+            <h3>{r.details.organization}</h3>
+            <p>
+              {r.details.location} · Private contact: {r.details.contactEmail}
+            </p>
+            <p>{r.details.message}</p>
+            {r.assessment && (
+              <>
+                <h4>AI review notes</h4>
+                <p>
+                  Needs clarification:{" "}
+                  {((r.assessment.missingInformation || []) as string[]).join(
+                    "; ",
+                  ) || "No gaps flagged; verify independently."}
+                </p>
+                <p>
+                  Concerns:{" "}
+                  {((r.assessment.concerns || []) as string[]).join("; ") ||
+                    "None flagged; this is not proof of legitimacy."}
+                </p>
+                <ul>
+                  {((r.assessment.verificationSteps || []) as string[]).map(
+                    (step, i) => (
+                      <li key={i}>{step}</li>
+                    ),
+                  )}
+                </ul>
+              </>
+            )}
+            <div className="row wrap">
+              <button
+                className="button secondary"
+                disabled={!!busy || !state.aiConfigured}
+                onClick={async () => {
+                  setBusy(r.id);
+                  setError("");
+                  try {
+                    const result = await request("/api/community", {
+                      action: "screen",
+                      id: r.id,
+                    });
+                    onDraft(r.id, result.assessment);
+                    await refresh();
+                  } catch (e) {
+                    setError((e as Error).message);
+                  } finally {
+                    setBusy("");
+                  }
+                }}
+              >
+                {busy === r.id
+                  ? "Working…"
+                  : "Review and structure with Claude"}
+              </button>
+              <button
+                className="text-button"
+                onClick={() =>
+                  onDraft(
+                    r.id,
+                    r.assessment || {
+                      organization: r.details.organization,
+                      location: r.details.location,
+                      description: r.details.message,
+                    },
+                  )
+                }
+              >
+                Open editable publishing form
+              </button>
+              <button
+                className="text-button"
+                disabled={!!busy}
+                onClick={async () => {
+                  setBusy(r.id);
+                  try {
+                    await request("/api/community", {
+                      action: "reject",
+                      id: r.id,
+                    });
+                    await refresh();
+                  } catch (e) {
+                    setError((e as Error).message);
+                  } finally {
+                    setBusy("");
+                  }
+                }}
+              >
+                Decline request
+              </button>
+            </div>
+          </article>
+        ))}
+      {!(state.communityRequests || []).some((r) => r.status === "PENDING") && (
+        <p className="notice">
+          No community requests awaiting review. You can add an opportunity
+          directly below.
+        </p>
+      )}
+    </section>
   );
 }
