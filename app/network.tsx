@@ -1428,8 +1428,9 @@ export default function Network() {
                           <p className="preserve">{p.description}</p>
                           {p.sample && (
                             <Badge tone="gold">
-                              Fictional sample · AI-generated picture ·
-                              AI-generated picture
+                              Fictional sample
+                              {p.imageUrl?.includes("-ai.png") &&
+                                " · AI-generated picture"}
                             </Badge>
                           )}
                           {p.imageUrl && (
@@ -2714,8 +2715,9 @@ function ReviewDesk({
                 <p className="preserve">{p.description}</p>
                 {p.sample && (
                   <Badge tone="gold">
-                    Fictional sample · AI-generated picture · AI-generated
-                    picture
+                    Fictional sample
+                    {p.imageUrl?.includes("-ai.png") &&
+                      " · AI-generated picture"}
                   </Badge>
                 )}
                 {p.imageUrl && (
