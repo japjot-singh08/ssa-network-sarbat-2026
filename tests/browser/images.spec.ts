@@ -9,7 +9,7 @@ test("picture upload resizes to JPEG, persists with a protected link, and attach
   });
   await page.goto("/?view=feed");
   await page
-    .getByRole("button", { name: "Share a story from your chapter" })
+    .getByRole("button", { name: "Share a story or event recap" })
     .click();
   const png = await page.evaluate(() => {
     const c = document.createElement("canvas");
@@ -20,13 +20,11 @@ test("picture upload resizes to JPEG, persists with a protected link, and attach
     x.fillRect(0, 0, 32, 32);
     return c.toDataURL("image/png").split(",")[1];
   });
-  await page
-    .getByLabel("Optional picture")
-    .setInputFiles({
-      name: "test-picture.png",
-      mimeType: "image/png",
-      buffer: Buffer.from(png, "base64"),
-    });
+  await page.getByLabel("Optional picture").setInputFiles({
+    name: "test-picture.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(png, "base64"),
+  });
   await expect(
     page.getByRole("img", { name: "Uploaded picture preview" }),
   ).toBeVisible();

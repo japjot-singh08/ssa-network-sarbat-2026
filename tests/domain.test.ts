@@ -304,3 +304,86 @@ test("shared, region-limited, and one-chapter challenges enforce participation w
     /places are claimed/,
   );
 });
+
+test("individual participation is private, idempotent and cannot award chapter points", () => {
+  const s = seed();
+  const baseline = [
+    s.points.length,
+    s.grants.length,
+    s.submissions.length,
+    s.participations.length,
+  ];
+  apply(s, student, { action: "joinIndividual", challengeId: "warmth" });
+  apply(s, student, { action: "joinIndividual", challengeId: "warmth" });
+  const p = s.individualParticipations[0];
+  assert.equal(s.individualParticipations.length, 1);
+  assert.equal(
+    visibleState(s, { ...student, id: "someone-else" }).individualParticipations
+      .length,
+    0,
+  );
+  assert.throws(
+    () =>
+      apply(
+        s,
+        { ...student, id: "someone-else" },
+        {
+          action: "completeIndividual",
+          participationId: p.id,
+          summary: "Helped pack supplies",
+          evidence: "Organizer confirmation",
+          hours: 2,
+        },
+      ),
+    /not found/,
+  );
+  const action = {
+    action: "completeIndividual" as const,
+    participationId: p.id,
+    summary: "Helped pack supplies",
+    evidence: "Organizer confirmation",
+    hours: 2,
+  };
+  apply(s, student, action);
+  apply(s, student, action);
+  assert.equal(p.status, "COMPLETED");
+  assert.deepEqual(
+    [
+      s.points.length,
+      s.grants.length,
+      s.submissions.length,
+      s.participations.length,
+    ],
+    baseline,
+  );
+});
+test("students without chapters can propose posts without leaking pending posts", () => {
+  const s = seed();
+  apply(s, student, {
+    action: "post",
+    title: "Our weekend gathering",
+    description: "Students came together for a study circle.",
+    category: "Education",
+  });
+  const p = s.posts.at(-1)!;
+  assert.equal(p.chapterId, null);
+  assert.equal(p.authorId, student.id);
+  assert.equal(p.status, "PENDING");
+  assert.ok(visibleState(s, student).posts.some((x) => x.id === p.id));
+  assert.ok(
+    !visibleState(s, { ...student, id: "another" }).posts.some(
+      (x) => x.id === p.id,
+    ),
+  );
+  apply(s, admin, {
+    action: "moderate",
+    postId: p.id,
+    publish: true,
+    feedback: "Reviewed",
+  });
+  assert.ok(
+    visibleState(s, { ...student, id: "another" }).posts.some(
+      (x) => x.id === p.id,
+    ),
+  );
+});

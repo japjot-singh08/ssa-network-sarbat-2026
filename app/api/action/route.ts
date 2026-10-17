@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     let moderation: { flagged: boolean; reason: string } | null = null;
     if (
       action.action === "post" &&
-      actor.role === "OFFICER" &&
+      actor.id !== "guest" &&
       process.env.ANTHROPIC_API_KEY
     ) {
       try {

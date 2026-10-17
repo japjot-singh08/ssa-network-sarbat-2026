@@ -21,6 +21,7 @@ const tables = [
   "chapterResources",
   "auditLogs",
   "communityRequests",
+  "individualParticipations",
 ] as const;
 const jsonFields = new Set([
   "assessment",

@@ -4,6 +4,12 @@ async function main() {
   const count = await transaction((s) => {
     let n = 0;
     for (const p of sampleFeedPosts) {
+      const existing = s.posts.find((x) => x.id === p.id);
+      if (existing?.sample) {
+        Object.assign(existing, p);
+        n++;
+        continue;
+      }
       if (
         !s.posts.some((x) => x.id === p.id) &&
         s.chapters.some((c) => c.id === p.chapterId)
@@ -15,7 +21,7 @@ async function main() {
     return n;
   });
   console.log(
-    `Added ${count} fictional sample posts. No awards or user posts changed.`,
+    `Added or refreshed ${count} fictional sample posts. No awards or user posts changed.`,
   );
 }
 main()

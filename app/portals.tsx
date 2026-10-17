@@ -547,7 +547,7 @@ export function Portals({
               </button>
             </div>
           )}
-          <div className="resource-grid">
+          <div className="resource-grid chapter-directory-grid">
             {filteredChapters.map((c) => (
               <button
                 className="panel resource-card"

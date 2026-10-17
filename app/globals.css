@@ -3472,3 +3472,45 @@ h1 {
   height: 100%;
   object-fit: cover;
 }
+.chapter-directory-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.chapter-directory-grid .resource-card {
+  padding: 18px;
+  gap: 0;
+}
+.chapter-directory-grid .resource-card h3 {
+  font-size: 19px;
+  margin: 10px 0 5px;
+}
+.chapter-directory-grid .resource-card p {
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 5px 0;
+}
+.chapter-directory-grid .resource-card > .row {
+  margin-bottom: 4px;
+}
+.chapter-directory-grid .resource-icon {
+  width: 30px;
+  height: 30px;
+}
+.chapter-directory-grid .resource-card .badge {
+  font-size: 9px;
+}
+.individual-project {
+  padding: 22px 0;
+  border-top: 1px solid #d4dad7;
+  margin-top: 20px;
+}
+@media (max-width: 900px) {
+  .chapter-directory-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .chapter-directory-grid {
+    grid-template-columns: 1fr;
+  }
+}

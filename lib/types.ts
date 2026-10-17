@@ -118,7 +118,9 @@ export type Post = {
   imageUrl?: string | null;
   sample?: boolean;
   id: string;
-  chapterId: string;
+  chapterId: string | null;
+  authorId?: string | null;
+  authorName?: string;
   submissionId: string | null;
   title: string;
   description: string;
@@ -159,7 +161,18 @@ export type CommunityRequest = {
   challengeId: string | null;
   createdAt: string;
 };
+export type IndividualParticipation = {
+  id: string;
+  userId: string;
+  challengeId: string;
+  status: "JOINED" | "COMPLETED";
+  summary: string;
+  evidence: string;
+  hours: number;
+  createdAt: string;
+};
 export type State = {
+  individualParticipations: IndividualParticipation[];
   communityRequests: CommunityRequest[];
   chapters: Chapter[];
   challenges: Challenge[];

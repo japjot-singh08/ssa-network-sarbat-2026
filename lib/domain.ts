@@ -17,6 +17,14 @@ const web = z
   .max(2000)
   .refine((v) => /^https?:\/\//i.test(v), "Use an http or https link");
 export const actionSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("joinIndividual"), challengeId: id }),
+  z.object({
+    action: z.literal("completeIndividual"),
+    participationId: id,
+    summary: text(4000),
+    evidence: text(4000),
+    hours: z.number().min(0.5).max(10000),
+  }),
   z.object({ action: z.literal("accept"), challengeId: id }),
   z.object({ action: z.literal("interest"), challengeId: id }),
   z.object({
@@ -140,6 +148,53 @@ export function apply(state: State, actor: Actor, action: Action) {
       actor.role === "OFFICER" && actor.chapterId,
       "Chapter officer access required.",
     );
+  if (
+    action.action === "joinIndividual" ||
+    action.action === "completeIndividual"
+  ) {
+    need(
+      actor.id !== "guest" && actor.verified !== false,
+      "Sign in with a verified account to participate.",
+    );
+    if (action.action === "joinIndividual") {
+      const c = state.challenges.find((c) => c.id === action.challengeId);
+      need(
+        c &&
+          c.status === "OPEN" &&
+          (!c.deadline || c.deadline >= now.slice(0, 10)),
+        "This opportunity is closed or its deadline has passed.",
+      );
+      if (
+        !state.individualParticipations.some(
+          (p) => p.userId === actor.id && p.challengeId === c.id,
+        )
+      )
+        state.individualParticipations.push({
+          id: uid(),
+          userId: actor.id,
+          challengeId: c.id,
+          status: "JOINED",
+          summary: "",
+          evidence: "",
+          hours: 0,
+          createdAt: now,
+        });
+      return "Joined individually. Confirm location, eligibility and availability with the organizer. No chapter points or grants are awarded.";
+    }
+    const p = state.individualParticipations.find(
+      (p) => p.id === action.participationId && p.userId === actor.id,
+    );
+    need(p, "Your individual participation was not found.");
+    if (p.status === "COMPLETED")
+      return "Completion already recorded. No chapter points were awarded.";
+    Object.assign(p, {
+      status: "COMPLETED",
+      summary: action.summary,
+      evidence: action.evidence,
+      hours: action.hours,
+    });
+    return "Personal completion recorded as self-reported. This does not affect chapter rankings, grants, or verified impact totals.";
+  }
   if (action.action === "accept" || action.action === "interest") {
     const c = state.challenges.find((c) => c.id === action.challengeId);
     need(c && c.status === "OPEN", "Challenge is not open.");
@@ -315,10 +370,18 @@ export function apply(state: State, actor: Actor, action: Action) {
     return existing ? "Shabash removed." : "Shabash!";
   }
   if (action.action === "post") {
-    officer();
+    need(
+      actor.id !== "guest" && actor.verified !== false,
+      "Sign in with a verified account to share a post.",
+    );
     state.posts.push({
       id: uid(),
-      chapterId: actor.chapterId!,
+      chapterId: actor.role === "OFFICER" ? actor.chapterId : null,
+      authorId: actor.id,
+      authorName:
+        actor.name ||
+        state.profiles.find((p) => p.id === actor.id)?.name ||
+        "Student contributor",
       submissionId: null,
       title: action.title,
       imageUrl: action.imageUrl || null,
@@ -401,6 +464,9 @@ export function visibleState(state: State, actor: Actor): State {
   return {
     ...state,
     profiles: [],
+    individualParticipations: (state.individualParticipations || []).filter(
+      (p) => actor.role === "ADMIN" || p.userId === actor.id,
+    ),
     communityRequests:
       actor.role === "ADMIN" ? state.communityRequests || [] : [],
     submissions: state.submissions.filter(
@@ -410,12 +476,19 @@ export function visibleState(state: State, actor: Actor): State {
           (p) => p.id === s.participationId && p.chapterId === actor.chapterId,
         ),
     ),
-    posts: state.posts.filter(
-      (p) =>
-        p.status === "PUBLISHED" ||
-        actor.role === "ADMIN" ||
-        p.chapterId === actor.chapterId,
-    ),
+    posts: state.posts
+      .filter(
+        (p) =>
+          p.status === "PUBLISHED" ||
+          actor.role === "ADMIN" ||
+          p.authorId === actor.id ||
+          (!!actor.chapterId && p.chapterId === actor.chapterId),
+      )
+      .map((p) => ({
+        ...p,
+        authorId:
+          actor.role === "ADMIN" || p.authorId === actor.id ? p.authorId : null,
+      })),
     interests: state.interests.filter((i) => i.userId === actor.id),
     reactions: state.reactions.map((r) => ({
       ...r,

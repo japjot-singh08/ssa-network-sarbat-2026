@@ -900,11 +900,12 @@ export default function Network() {
                     {t}
                     {t === "My Challenges" && (
                       <span>
-                        {
-                          state.participations.filter(
-                            (p) => p.chapterId === state.actor.chapterId,
-                          ).length
-                        }
+                        {state.participations.filter(
+                          (p) => p.chapterId === state.actor.chapterId,
+                        ).length +
+                          (state.individualParticipations || []).filter(
+                            (p) => p.userId === state.actor.id,
+                          ).length}
                       </span>
                     )}
                   </button>
@@ -1114,19 +1115,27 @@ export default function Network() {
                 </>
               ) : (
                 <div className="stack">
+                  <IndividualChallenges state={state} act={act} />
                   {state.actor.role !== "OFFICER" ? (
                     <div className="empty">
                       <Users />
-                      <h3>Your chapter’s next chapter starts here.</h3>
+                      <h3>Chapter participation is optional.</h3>
                       <p>
-                        Sign in as an authorized chapter officer to accept a
-                        challenge and submit evidence.
+                        Use individual participation above even if your school
+                        has no SSA. Only chapter officers accept challenges on
+                        behalf of a chapter.
                       </p>
                       <button
                         className="button"
-                        onClick={() => setIdentity(true)}
+                        onClick={() =>
+                          state.actor.id === "guest"
+                            ? setIdentity(true)
+                            : setArenaTab("Discover")
+                        }
                       >
-                        Sign in / Account
+                        {state.actor.id === "guest"
+                          ? "Sign in to participate"
+                          : "Discover opportunities"}
                       </button>
                     </div>
                   ) : state.participations.filter(
@@ -1282,6 +1291,38 @@ export default function Network() {
                   </button>
                 ))}
               </div>
+              <details className="panel">
+                <summary>
+                  <b>See example chapter standings</b> · fictional demo
+                </summary>
+                <p>
+                  Illustrative Fall 2026 numbers only. These do not change live
+                  rankings, points, grants, or verified impact.
+                </p>
+                <div className="leaderboard">
+                  <div className="leader-row table-head">
+                    <span>RANK</span>
+                    <span>EXAMPLE CHAPTER</span>
+                    <span>PROJECTS</span>
+                    <span>POINTS</span>
+                  </div>
+                  {[
+                    ["UNC Charlotte SSA", 5, 850],
+                    ["Stanford SSA", 4, 720],
+                    ["University of Washington SSA", 3, 560],
+                  ].map(([name, projects, points], i) => (
+                    <div className="leader-row" key={name}>
+                      <span>{i + 1}</span>
+                      <b>
+                        {name}
+                        <small className="muted"> Fictional example</small>
+                      </b>
+                      <span>{projects}</span>
+                      <span className="point-number">{points}</span>
+                    </div>
+                  ))}
+                </div>
+              </details>
               <div className="panel scoring">
                 <h3>Effort deserves recognition.</h3>
                 <p>
@@ -1307,8 +1348,35 @@ export default function Network() {
                 title="Look what we’re building together."
                 description="Stories of service, campus connections, and small moments that move us forward."
               />
-              {state.actor.role === "OFFICER" && (
+              {state.actor.id !== "guest" ? (
                 <PostForm busy={busy} act={act} />
+              ) : (
+                <div className="panel compose">
+                  <button className="button" onClick={() => setIdentity(true)}>
+                    Sign in to share a story
+                  </button>
+                </div>
+              )}
+              {state.posts.some(
+                (p) =>
+                  p.authorId === state.actor.id && p.status !== "PUBLISHED",
+              ) && (
+                <section className="panel">
+                  <h3>Your proposed posts</h3>
+                  {state.posts
+                    .filter(
+                      (p) =>
+                        p.authorId === state.actor.id &&
+                        p.status !== "PUBLISHED",
+                    )
+                    .map((p) => (
+                      <div key={p.id} className="portal-list-line">
+                        <strong>{p.title}</strong>
+                        <Badge>{p.status}</Badge>
+                        <p>{p.moderation}</p>
+                      </div>
+                    ))}
+                </section>
               )}
               <div className="feed-layout">
                 <div className="stack">
@@ -1318,7 +1386,7 @@ export default function Network() {
                     .map((p) => {
                       const c = state.chapters.find(
                           (c) => c.id === p.chapterId,
-                        )!,
+                        ),
                         liked = state.reactions.some(
                           (r) =>
                             r.postId === p.id && r.userId === state.actor.id,
@@ -1328,15 +1396,24 @@ export default function Network() {
                           <div className="row between">
                             <button
                               className="chapter-link"
-                              onClick={() => setChapterId(c.id)}
+                              onClick={() => c && setChapterId(c.id)}
+                              disabled={!c}
                             >
                               <span className="chapter-avatar">
-                                {c.id.toUpperCase().slice(0, 2)}
+                                {(c?.name || p.authorName || "ST")
+                                  .toUpperCase()
+                                  .slice(0, 2)}
                               </span>
                               <span>
-                                <b>{c.name}</b>
+                                <b>
+                                  {c?.name ||
+                                    p.authorName ||
+                                    "Student contributor"}
+                                </b>
                                 <small>
-                                  {c.university} · {date(p.createdAt)}
+                                  {c?.university ||
+                                    "Individual community member"}{" "}
+                                  · {date(p.createdAt)}
                                 </small>
                               </span>
                             </button>
@@ -1350,7 +1427,10 @@ export default function Network() {
                           <h2>{p.title}</h2>
                           <p className="preserve">{p.description}</p>
                           {p.sample && (
-                            <Badge tone="gold">Fictional sample post</Badge>
+                            <Badge tone="gold">
+                              Fictional sample · AI-generated picture ·
+                              AI-generated picture
+                            </Badge>
                           )}
                           {p.imageUrl && (
                             <Image
@@ -1682,7 +1762,11 @@ export default function Network() {
               onSignedIn={async () => {
                 await refresh();
                 setIdentity(false);
-                go(view === "directory" ? "directory" : "dashboard");
+                go(
+                  ["directory", "arena", "feed"].includes(view)
+                    ? view
+                    : "dashboard",
+                );
               }}
             />
           )}
@@ -1754,7 +1838,35 @@ export default function Network() {
             Rewards require human verification. Grant awards are tracking
             records, not payments.
           </div>
+          <div className="notice">
+            No SSA at your school? You can participate individually. Confirm
+            eligibility, location and availability with the organizer.
+            Individual participation never awards chapter points or grants.
+          </div>
           <div className="row wrap">
+            <button
+              className="button"
+              disabled={busy || detail.status !== "OPEN"}
+              onClick={async () => {
+                if (state.actor.id === "guest") {
+                  setIdentity(true);
+                  setDetail(null);
+                  return;
+                }
+                if (
+                  await act({
+                    action: "joinIndividual",
+                    challengeId: detail.id,
+                  })
+                ) {
+                  setDetail(null);
+                  go("arena");
+                  setArenaTab("My Challenges");
+                }
+              }}
+            >
+              Join individually
+            </button>
             <button
               disabled={
                 busy ||
@@ -2033,7 +2145,7 @@ function PostForm({
     <div className="panel compose">
       {!open ? (
         <button className="text-button" onClick={() => setOpen(true)}>
-          <Plus size={18} /> Share a story from your chapter
+          <Plus size={18} /> Share a story or event recap
         </button>
       ) : (
         <form
@@ -2054,8 +2166,9 @@ function PostForm({
         >
           <h3>Propose a community post</h3>
           <p className="muted small">
-            Public captions require human review. AI screening flags concerns
-            when configured.
+            Share a recent activity or success. Individual posts use your
+            display name; chapter posts require officer access. Pictures and
+            captions need human review before appearing publicly.
           </p>
           <Field label="Title">
             <input required name="title" maxLength={150} />
@@ -2599,7 +2712,12 @@ function ReviewDesk({
                 <Badge tone="gold">{p.status}</Badge>
                 <h3>{p.title}</h3>
                 <p className="preserve">{p.description}</p>
-                {p.sample && <Badge tone="gold">Fictional sample post</Badge>}
+                {p.sample && (
+                  <Badge tone="gold">
+                    Fictional sample · AI-generated picture · AI-generated
+                    picture
+                  </Badge>
+                )}
                 {p.imageUrl && (
                   <Image
                     src={p.imageUrl}
@@ -3064,6 +3182,98 @@ function CommunityInbox({
           directly below.
         </p>
       )}
+    </section>
+  );
+}
+
+function IndividualChallenges({
+  state,
+  act,
+}: {
+  state: PublicState;
+  act: (data: unknown) => Promise<boolean>;
+}) {
+  const mine = (state.individualParticipations || []).filter(
+    (p) => p.userId === state.actor.id,
+  );
+  const [busy, setBusy] = useState(false);
+  return (
+    <section className="panel">
+      <h2>My individual participation</h2>
+      <p>
+        No chapter required. Your participation and self-reported completion
+        stay separate from chapter rankings, grants and verified impact totals.
+      </p>
+      {!mine.length && (
+        <p>Open an opportunity in Discover and choose Join individually.</p>
+      )}
+      {mine.map((p) => {
+        const c = state.challenges.find((c) => c.id === p.challengeId);
+        return (
+          <article key={p.id} className="individual-project">
+            <Badge>
+              {p.status === "COMPLETED"
+                ? "Self-reported completion"
+                : "Joined individually"}
+            </Badge>
+            <h3>{c?.title || "Arena opportunity"}</h3>
+            <p>
+              {c?.location} ·{" "}
+              {c?.deadline ? date(c.deadline) : "Date to confirm"}
+            </p>
+            <p>{c?.completion}</p>
+            <p className="small muted">
+              Check the organizer’s eligibility and availability before
+              attending. Joining here does not reserve a chapter place.
+            </p>
+            {p.status === "COMPLETED" ? (
+              <>
+                <p>{p.summary}</p>
+                <p>{p.hours} self-reported hours · no chapter points awarded</p>
+              </>
+            ) : (
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const f = new FormData(e.currentTarget);
+                  setBusy(true);
+                  try {
+                    await act({
+                      action: "completeIndividual",
+                      participationId: p.id,
+                      summary: String(f.get("summary")),
+                      evidence: String(f.get("evidence")),
+                      hours: Number(f.get("hours")),
+                    });
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                <Field label="What did you contribute?">
+                  <textarea name="summary" required maxLength={4000} />
+                </Field>
+                <Field label="Completion notes or evidence">
+                  <textarea name="evidence" required maxLength={4000} />
+                </Field>
+                <Field label="Your hours contributed">
+                  <input
+                    name="hours"
+                    type="number"
+                    min={0.5}
+                    max={10000}
+                    step={0.5}
+                    required
+                  />
+                </Field>
+                <button className="button" disabled={busy}>
+                  Record personal completion
+                </button>
+              </form>
+            )}
+          </article>
+        );
+      })}
     </section>
   );
 }
