@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { ask, askJSON, jsonReply } from "./ai";
+import { mediaUrl } from "./media-validation";
 export const communityInput = z.object({
+  imageUrl: mediaUrl.optional(),
   organization: z.string().trim().min(2).max(200),
   location: z.string().trim().min(2).max(200),
   contactEmail: z.email().max(250),

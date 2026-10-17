@@ -165,3 +165,11 @@ Anyone can use Arena → **Request community help** without creating an account.
 Migration `006_community_requests` creates the inbox with RLS enabled and no direct anonymous/authenticated grants. Public submissions have server validation, a honeypot and rate limiting; AI screening is restricted to authenticated administrators. Contact emails are excluded from the Claude screening payload and public Arena cards.
 
 Arena impact counters include only approved submissions on non-sample opportunities and use human-verified hours. Sahayak retrieves relevant open Arena requirements alongside Toolkit documents and validates source IDs. Claude uses a forced formatting tool for structured responses; that tool performs no external action. Answers render Markdown headings, lists and tables safely with raw HTML disabled. Missing AI configuration remains an explicit setup state. Set `ANTHROPIC_API_KEY` only on the server.
+
+### Pictures and sample feed stories
+
+Chapter officers can attach one picture when proposing a National Feed post. Community members can attach one to a help request. The browser resizes to a maximum 1600px edge and re-encodes as JPEG, stripping original metadata. Server uploads accept JPEGs up to 1.5 MB, validate file signatures, and use rate limiting. Preview/removal work before submission. Request images carry through the human publishing form; verified achievement posts inherit the challenge picture. Feed images remain subject to human moderation.
+
+Migration `007_post_images` stores uploaded image bytes in the existing Supabase PostgreSQL database with RLS enabled and no direct public table grants, avoiding additional service credentials. Local demo uploads persist under the ignored demo data directory. Images use random, capability-protected links: anyone holding a full image link can view it. Public cards expose links only when published. Do not upload private or nonconsensual photos. Unused upload cleanup and a full media-management console are outside this MVP.
+
+Three fictional demonstration feed posts use original SVG illustrations in `public/demo`, explicitly labeled as samples. They do not assert actual chapter events or grant points. Seed them idempotently with `node --env-file=.env.local --import tsx scripts/seed-feed-samples.ts` (omit `--env-file` for a local demo without that file).

@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import {
   useCallback,
   useEffect,
@@ -46,6 +47,7 @@ import {
 import { matching, score, semester, submissionContext } from "@/lib/domain";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { ImageUpload } from "./image-upload";
 import { AuthPanel, Portals } from "./portals";
 type View =
   | "home"
@@ -344,7 +346,21 @@ export default function Network() {
       <div className="challenge-grid">
         {items.map((c, i) => (
           <article className="challenge-card" key={c.id}>
-            <div className={"card-art art-" + (i % 4)}>
+            <div
+              className={
+                "card-art art-" + (i % 4) + (c.imageUrl ? " photo-art" : "")
+              }
+            >
+              {c.imageUrl && (
+                <Image
+                  src={c.imageUrl}
+                  alt={c.title}
+                  width={900}
+                  height={500}
+                  unoptimized
+                  className="card-photo"
+                />
+              )}
               <div className="art-grid" />
               <span className="art-word">{String(i + 1).padStart(2, "0")}</span>
               <span className="art-icon">
@@ -1333,6 +1349,23 @@ export default function Network() {
                           <div className="feed-category">{p.category}</div>
                           <h2>{p.title}</h2>
                           <p className="preserve">{p.description}</p>
+                          {p.sample && (
+                            <Badge tone="gold">Fictional sample post</Badge>
+                          )}
+                          {p.imageUrl && (
+                            <Image
+                              src={p.imageUrl}
+                              alt={
+                                p.sample
+                                  ? "Fictional sample illustration"
+                                  : p.title
+                              }
+                              width={1000}
+                              height={600}
+                              unoptimized
+                              className="post-photo"
+                            />
+                          )}
                           <div className="feed-footer">
                             <button
                               className={"reaction " + (liked ? "liked" : "")}
@@ -1657,6 +1690,16 @@ export default function Network() {
       )}
       {detail && (
         <Modal title={detail.title} close={() => setDetail(null)}>
+          {detail.imageUrl && (
+            <Image
+              src={detail.imageUrl}
+              alt={detail.title}
+              width={1000}
+              height={600}
+              unoptimized
+              className="post-photo"
+            />
+          )}
           <div className="row wrap">
             <Badge>{detail.type}</Badge>
             <Badge tone="gold">{detail.points} base points</Badge>
@@ -1985,6 +2028,7 @@ function PostForm({
   act: (data: unknown) => Promise<boolean>;
 }) {
   const [open, setOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
   return (
     <div className="panel compose">
       {!open ? (
@@ -1999,6 +2043,7 @@ function PostForm({
             if (
               await act({
                 action: "post",
+                imageUrl: f.get("imageUrl"),
                 title: f.get("title"),
                 description: f.get("description"),
                 category: f.get("category"),
@@ -2025,7 +2070,8 @@ function PostForm({
               ))}
             </select>
           </Field>
-          <button className="button" disabled={busy}>
+          <ImageUpload onBusyChange={setUploading} />
+          <button className="button" disabled={busy || uploading}>
             Submit for review
           </button>{" "}
           <button
@@ -2184,6 +2230,7 @@ function ReviewDesk({
   onRefresh: () => Promise<void>;
   startTab: string;
 }) {
+  const [imageUploading, setImageUploading] = useState(false);
   const [tab, setTab] = useState(startTab),
     [requestId, setRequestId] = useState<string | undefined>(),
     [extract, setExtract] = useState(""),
@@ -2278,6 +2325,16 @@ function ReviewDesk({
               setMissing((assessment.missingInformation || []) as string[]);
             }}
           />
+          {typeof draft.imageUrl === "string" && draft.imageUrl && (
+            <Image
+              src={draft.imageUrl}
+              alt="Request picture for publication review"
+              width={800}
+              height={500}
+              unoptimized
+              className="post-photo"
+            />
+          )}
           <h2>
             {requestId
               ? "Review and publish this community request"
@@ -2358,6 +2415,9 @@ function ReviewDesk({
                   ...data,
                   action: "publish",
                   communityRequestId: requestId,
+                  imageUrl: String(
+                    f.get("uploadedImageUrl") || draft.imageUrl || "",
+                  ),
                   points: Number(f.get("points")),
                   grant: Number(f.get("grant")),
                   sample: f.get("sample") === "on",
@@ -2520,7 +2580,11 @@ function ReviewDesk({
               <input type="checkbox" required /> I confirmed these details and
               have authority to publish this challenge.
             </label>
-            <button className="button" disabled={busy}>
+            <ImageUpload
+              name="uploadedImageUrl"
+              onBusyChange={setImageUploading}
+            />
+            <button className="button" disabled={busy || imageUploading}>
               Confirm and publish challenge <ArrowUpRight size={16} />
             </button>
           </form>
@@ -2535,6 +2599,17 @@ function ReviewDesk({
                 <Badge tone="gold">{p.status}</Badge>
                 <h3>{p.title}</h3>
                 <p className="preserve">{p.description}</p>
+                {p.sample && <Badge tone="gold">Fictional sample post</Badge>}
+                {p.imageUrl && (
+                  <Image
+                    src={p.imageUrl}
+                    alt={p.sample ? "Fictional sample illustration" : p.title}
+                    width={1000}
+                    height={600}
+                    unoptimized
+                    className="post-photo"
+                  />
+                )}
                 <div className="notice">Screening: {p.moderation}</div>
                 <form
                   onSubmit={(e) => {
@@ -2764,6 +2839,7 @@ function SubmissionReview({
 }
 
 function CommunityHelpForm() {
+  const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false),
     [message, setMessage] = useState(""),
     [error, setError] = useState("");
@@ -2824,6 +2900,7 @@ function CommunityHelpForm() {
               placeholder="What needs doing? Who benefits? Include any date, volunteer count, skills, accessibility needs, and a way to verify the request. English, Punjabi, or Pinglish welcome."
             />
           </Field>
+          <ImageUpload onBusyChange={setUploading} />
           <input
             name="website"
             aria-hidden="true"
@@ -2841,7 +2918,7 @@ function CommunityHelpForm() {
               {error}
             </p>
           )}
-          <button className="button" disabled={busy}>
+          <button className="button" disabled={busy || uploading}>
             {busy ? "Sending…" : "Send request to USM"}
           </button>
         </form>
@@ -2882,6 +2959,16 @@ function CommunityInbox({
               {r.details.location} · Private contact: {r.details.contactEmail}
             </p>
             <p>{r.details.message}</p>
+            {r.details.imageUrl && (
+              <Image
+                src={r.details.imageUrl}
+                alt="Picture supplied with community request"
+                width={800}
+                height={500}
+                unoptimized
+                className="post-photo"
+              />
+            )}
             {r.assessment && (
               <>
                 <h4>AI review notes</h4>
@@ -2917,7 +3004,10 @@ function CommunityInbox({
                       action: "screen",
                       id: r.id,
                     });
-                    onDraft(r.id, result.assessment);
+                    onDraft(r.id, {
+                      ...result.assessment,
+                      imageUrl: r.details.imageUrl || "",
+                    });
                     await refresh();
                   } catch (e) {
                     setError((e as Error).message);
@@ -2933,14 +3023,14 @@ function CommunityInbox({
               <button
                 className="text-button"
                 onClick={() =>
-                  onDraft(
-                    r.id,
-                    r.assessment || {
+                  onDraft(r.id, {
+                    ...(r.assessment || {
                       organization: r.details.organization,
                       location: r.details.location,
                       description: r.details.message,
-                    },
-                  )
+                    }),
+                    imageUrl: r.details.imageUrl || "",
+                  })
                 }
               >
                 Open editable publishing form

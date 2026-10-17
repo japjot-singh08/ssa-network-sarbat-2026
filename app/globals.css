@@ -3438,3 +3438,37 @@ h1 {
     font-size: 11px;
   }
 }
+.post-photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 500px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin: 18px 0;
+  background: #e7ebe6;
+}
+.image-upload {
+  border: 1px dashed #a6b4b8;
+  padding: 16px;
+  margin: 18px 0;
+}
+.image-upload .post-photo {
+  max-height: 260px;
+  object-fit: contain;
+}
+.card-art.photo-art {
+  height: 190px;
+  padding: 0;
+  overflow: hidden;
+}
+.photo-art .art-grid,
+.photo-art .art-word,
+.photo-art .art-icon {
+  display: none;
+}
+.card-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

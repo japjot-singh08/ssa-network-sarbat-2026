@@ -52,6 +52,7 @@ export type Chapter = {
   bio: string;
 };
 export type Challenge = {
+  imageUrl?: string | null;
   maxChapters?: number | null;
   restrictRegion?: boolean;
   sample?: boolean;
@@ -114,6 +115,8 @@ export type Grant = {
   createdAt: string;
 };
 export type Post = {
+  imageUrl?: string | null;
+  sample?: boolean;
   id: string;
   chapterId: string;
   submissionId: string | null;

@@ -1,3 +1,4 @@
+import { mediaUrl } from "./media-validation";
 import { z } from "zod";
 import {
   categories,
@@ -39,6 +40,7 @@ export const actionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("react"), postId: id }),
   z.object({
     action: z.literal("post"),
+    imageUrl: mediaUrl.optional(),
     title: text(150),
     description: text(),
     category: z.enum(categories),
@@ -51,6 +53,7 @@ export const actionSchema = z.discriminatedUnion("action", [
   }),
   z.object({
     action: z.literal("publish"),
+    imageUrl: mediaUrl.optional(),
     communityRequestId: z.string().max(100).optional(),
     title: text(150),
     description: text(),
@@ -277,6 +280,7 @@ export function apply(state: State, actor: Actor, action: Action) {
           id: uid(),
           chapterId: p.chapterId,
           submissionId: s.id,
+          imageUrl: c.imageUrl || null,
           title: c.title,
           description: `${chapter.name} completed “${c.title}”. A USM reviewer verified ${action.verifiedHours} total volunteer-hours. ${state.points.find((t) => t.submissionId === s.id)!.amount} recognition points awarded.`,
           category: c.category,
@@ -317,6 +321,7 @@ export function apply(state: State, actor: Actor, action: Action) {
       chapterId: actor.chapterId!,
       submissionId: null,
       title: action.title,
+      imageUrl: action.imageUrl || null,
       description: action.description,
       category: action.category,
       verified: false,

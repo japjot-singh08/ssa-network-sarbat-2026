@@ -32,7 +32,7 @@ const jsonFields = new Set([
   "onboarding",
 ]);
 let client: ReturnType<typeof postgres> | undefined;
-function sqlClient() {
+export function sqlClient() {
   return (client ??= postgres(process.env.DATABASE_URL!, {
     max: 3,
     prepare: false,
