@@ -16,7 +16,7 @@ export async function ask(
       maxRetries: 1,
     });
   const response = await client.messages.create({
-    model: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5",
+    model: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6",
     max_tokens: 1800,
     system,
     messages: [{ role: "user", content: prompt }],

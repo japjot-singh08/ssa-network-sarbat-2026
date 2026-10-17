@@ -1,7 +1,7 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { verifiedUser } from "./supabase-auth";
-import { universityEmail } from "./university-email";
+import { accountEmailAllowed } from "./university-email";
 import { actorFromProfile, ensureProfile } from "./membership";
 import { transaction } from "./store";
 import type { Actor } from "./types";
@@ -61,7 +61,7 @@ export async function getActor(): Promise<Actor> {
     !user ||
     !user.email_confirmed_at ||
     !user.email ||
-    !universityEmail(user.email)
+    !accountEmailAllowed(user.email)
   )
     return { id: "guest", role: "STUDENT", chapterId: null };
   const identity = {

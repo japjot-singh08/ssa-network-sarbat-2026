@@ -6,7 +6,7 @@ root=Path(__file__).resolve().parents[1]
 files=[]
 for directory in ('app','lib','tests','scripts','supabase','public'):
     files.extend(p for p in (root/directory).rglob('*') if p.is_file() and not p.is_symlink() and '__pycache__' not in p.parts)
-for name in ('README.md','AUTHENTICATION.md','DEMO.md','LICENSE','package.json','package-lock.json','tsconfig.json','next-env.d.ts','postcss.config.mjs','eslint.config.mjs','playwright.config.ts','.gitignore','.env.example'):
+for name in ('README.md','AUTHENTICATION.md','DEPLOYMENT.md','DEMO.md','LICENSE','package.json','package-lock.json','tsconfig.json','next-env.d.ts','postcss.config.mjs','eslint.config.mjs','playwright.config.ts','.gitignore','.env.example'):
     p=root/name
     if p.is_file(): files.append(p)
 secrets=[]

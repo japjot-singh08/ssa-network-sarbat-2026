@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -58,8 +58,8 @@ export function AuthPanel({ onSignedIn }: { onSignedIn: () => Promise<void> }) {
   return (
     <>
       <p className="muted small">
-        Use your verified university email. New accounts start as students;
-        officer and administrator permissions require approval.
+        Use an email address you control and verify it. New accounts start as
+        students; officer and administrator permissions require approval.
       </p>
       <div className="tabs">
         <button
@@ -122,7 +122,7 @@ export function AuthPanel({ onSignedIn }: { onSignedIn: () => Promise<void> }) {
             />
           </Field>
         )}
-        <Field label="University email">
+        <Field label="Email address">
           <input
             type="email"
             name="email"
@@ -184,9 +184,9 @@ export function AuthPanel({ onSignedIn }: { onSignedIn: () => Promise<void> }) {
       </div>
       {mode === "signup" && (
         <p className="small muted">
-          We store your preferred name, university email, and the applications
-          you choose to submit. Membership applications are private to you and
-          the receiving chapter’s officers.
+          We store your preferred name, email address, and the applications you
+          choose to submit. Membership applications are private to you and the
+          receiving chapter’s officers.
         </p>
       )}
     </>
@@ -215,6 +215,19 @@ export function Portals({
     [editProposal, setEditProposal] = useState<ChapterProposal | null>(null),
     [chapterTab, setChapterTab] = useState("Overview"),
     [selectedChapter, setSelectedChapter] = useState("");
+  const profileRef = useRef<HTMLElement>(null);
+  const applicationRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const target = joining
+      ? applicationRef.current
+      : selected
+        ? profileRef.current
+        : null;
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      target.focus({ preventScroll: true });
+    }
+  }, [selected, joining]);
   const actor = state.actor,
     profile = state.profiles.find((p) => p.id === actor.id),
     myMemberships = state.memberships.filter((m) => m.userId === actor.id),
@@ -258,7 +271,12 @@ export function Portals({
       </div>
     );
   const applicationForm = joining && (
-    <section className="panel portal-form">
+    <section
+      ref={applicationRef}
+      tabIndex={-1}
+      aria-label="Chapter membership application"
+      className="panel portal-form"
+    >
       <div className="row between">
         <h2>Apply to {joining.name}</h2>
         <button className="text-button" onClick={() => setJoining(null)}>
@@ -521,7 +539,12 @@ export function Portals({
             </button>
           </div>
           {selected && (
-            <section className="panel portal-section">
+            <section
+              ref={profileRef}
+              tabIndex={-1}
+              aria-label="Chapter profile"
+              className="panel portal-section"
+            >
               <div className="row between">
                 <h2>{selected.name}</h2>
                 <button
@@ -909,7 +932,7 @@ export function Portals({
                       <thead>
                         <tr>
                           <th>Name</th>
-                          <th>University email</th>
+                          <th>Account email</th>
                           <th>Academic year</th>
                           <th>Role</th>
                           <th>Status</th>
@@ -1193,7 +1216,7 @@ export function Portals({
           />
           <section className="panel">
             <p>
-              University email:{" "}
+              Account email:{" "}
               {actor.email || profile?.email || "Fictional demo identity"}
             </p>
             <p>
@@ -1201,7 +1224,7 @@ export function Portals({
               {state.demo
                 ? "Demonstration account"
                 : actor.verified
-                  ? "University email verified"
+                  ? "Account email verified"
                   : "Verification required"}
             </p>
             <form

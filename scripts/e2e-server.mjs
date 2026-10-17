@@ -20,6 +20,7 @@ const child = spawn(
       ...process.env,
       DEMO_MODE: real ? "false" : "true",
       DEMO_DATA_DIR: dir,
+      SIGNUP_EMAIL_POLICY: "university",
       DATABASE_URL: "",
       ANTHROPIC_API_KEY: "",
       SESSION_SECRET: "synthetic-e2e-secret-not-for-real-use-123456",

@@ -163,7 +163,7 @@ function clean(
 }
 export function applyPortal(s: State, a: Actor, input: PortalAction) {
   need(a.id !== "guest", "Sign in to continue.");
-  need(a.verified !== false, "Verify your university email first.");
+  need(a.verified !== false, "Verify your email first.");
   const now = new Date().toISOString(),
     uid = () => crypto.randomUUID();
   const audit = (action: string, targetId: string, chapterId: string | null) =>

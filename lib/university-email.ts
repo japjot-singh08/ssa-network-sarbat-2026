@@ -14,3 +14,14 @@ export function universityEmail(
     allowed.some((d) => domain === d || domain.endsWith("." + d))
   );
 }
+
+// Open registration is explicit; omitted or unknown values retain university restrictions.
+export function accountEmailAllowed(
+  email: string,
+  policy = process.env.SIGNUP_EMAIL_POLICY || "university",
+  configured = process.env.UNIVERSITY_EMAIL_DOMAINS || "",
+) {
+  return policy === "any"
+    ? z.email().safeParse(email).success
+    : universityEmail(email, configured);
+}

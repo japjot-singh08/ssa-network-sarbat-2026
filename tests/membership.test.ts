@@ -7,7 +7,7 @@ import {
   portalActionSchema,
   actorFromProfile,
 } from "../lib/membership";
-import { universityEmail } from "../lib/university-email";
+import { universityEmail, accountEmailAllowed } from "../lib/university-email";
 import type { Actor } from "../lib/types";
 const student: Actor = {
     id: "student",
@@ -263,4 +263,22 @@ test("draft chapter proposals stay private until submitted", () => {
     submit: true,
   });
   assert.equal(portalVisible(s, admin).chapterProposals.length, 1);
+});
+
+test("open email policy accepts personal addresses without weakening restricted defaults", () => {
+  assert.equal(accountEmailAllowed("person@gmail.com", "any"), true);
+  assert.equal(accountEmailAllowed("not-an-email", "any"), false);
+  assert.equal(accountEmailAllowed("person@gmail.com", "university"), false);
+  assert.equal(
+    accountEmailAllowed("person@gmail.com", "invalid-policy"),
+    false,
+  );
+  assert.equal(
+    accountEmailAllowed("person@university.edu.evil.com", "university"),
+    false,
+  );
+  assert.equal(
+    accountEmailAllowed("person@university.edu", "university"),
+    true,
+  );
 });

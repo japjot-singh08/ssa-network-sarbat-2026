@@ -2,11 +2,8 @@ import { z } from "zod";
 import { cookies } from "next/headers";
 import { body, fail, limit, sameOrigin } from "@/lib/auth";
 import { authClient, saveAuth, verifiedUser } from "@/lib/supabase-auth";
-import { universityEmail } from "@/lib/university-email";
-const email = z
-  .email()
-  .max(254)
-  .transform((v) => v.toLowerCase().trim());
+import { accountEmailAllowed } from "@/lib/university-email";
+const email = z.string().trim().toLowerCase().pipe(z.email().max(254));
 const schema = z.discriminatedUnion("mode", [
   z
     .object({
@@ -53,7 +50,7 @@ export async function POST(req: Request) {
     const input = schema.parse(await body(req));
     const jar = await cookies();
     const callback = new URL("/auth/callback", req.headers.get("origin")!).href;
-    if ("email" in input && !universityEmail(input.email))
+    if ("email" in input && !accountEmailAllowed(input.email))
       throw new Error(
         "Use your university .edu email, or a university domain approved by USM.",
       );
@@ -67,7 +64,7 @@ export async function POST(req: Request) {
       if (error) throw error;
       return Response.json({
         message:
-          "Check your university inbox to verify your email before signing in. If the account already exists, sign in or reset your password.",
+          "Check your inbox to verify your email before signing in. If the account already exists, sign in or reset your password.",
       });
     }
     if (input.mode === "login") {
@@ -78,7 +75,7 @@ export async function POST(req: Request) {
       if (error || !data.session)
         throw new Error(error?.message || "Sign-in failed.");
       if (!data.user?.email_confirmed_at)
-        throw new Error("Verify your university email before signing in.");
+        throw new Error("Verify your email before signing in.");
       await saveAuth(data.session);
       return Response.json({ message: "Signed in. Welcome to SSA Network." });
     }
@@ -88,8 +85,7 @@ export async function POST(req: Request) {
       });
       if (error) throw error;
       return Response.json({
-        message:
-          "If that university account exists, a password reset link has been sent.",
+        message: "If that account exists, a password reset link has been sent.",
       });
     }
     if (input.mode === "resend") {
@@ -113,7 +109,7 @@ export async function POST(req: Request) {
         !data.session ||
         !data.user?.email_confirmed_at ||
         !data.user.email ||
-        !universityEmail(data.user.email)
+        !accountEmailAllowed(data.user.email)
       )
         throw new Error(
           "The verification or reset link is invalid or expired.",

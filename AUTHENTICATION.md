@@ -4,7 +4,7 @@ This phase extends the existing application. The original working demo remains a
 
 ## View the new experience
 
-Set `DEMO_MODE=false`, configure the Supabase auth settings below, build, and start the app. Visit http://localhost:3000 and choose **Sign in / Join**. Create an account with a university email, verify the email, and sign in. A successful real sign-in has not yet been certified end to end: the project is reachable and confirmation is enabled, but a human-controlled university inbox must complete verification.
+Set `DEMO_MODE=false`, configure the Supabase auth settings below, build, and start the app. Visit http://localhost:3000 and choose **Sign in / Join**. Create an account with a university email, verify the email, and sign in. Real account signup, email verification, and sign-in have been exercised by the operator. Cross-device hosted verification and password recovery remain to be checked after deployment.
 
 The directory is public. Signed-in students have My dashboard, My SSA, My applications, My profile, Arena, Leaderboard, Feed, Toolkit, and Sahayak. **Join an SSA** and **Start a New SSA** are prominent dashboard actions. Officers retain those student features and gain chapter-scoped application review, a private roster, public profile editing, chapter resources, and Arena controls. Administrators receive USM administration and the existing review desk.
 
@@ -37,7 +37,7 @@ Supabase **Confirm email** must remain enabled. In Supabase Authentication → U
 
 The app supports Supabase's default confirmation/reset link flow. It consumes the returned token fragment, immediately removes it from browser history, validates the session with Supabase, and stores access and refresh tokens only in HTTP-only, SameSite cookies. Expired access tokens are refreshed server-side. Privileged roles are fetched from protected database records, never signup metadata or editable client fields. Sign-out clears the cookies and revokes the current Supabase session when available.
 
-**Email delivery is an external configuration requirement.** The project currently uses the default Supabase sender. Supabase documents that this sender delivers only to project team addresses and has restrictive limits. Configure an approved SMTP provider for public university signups and password-reset delivery. No SMTP provider, account, or paid plan has been created or purchased by this implementation. Do not disable email confirmation to work around delivery restrictions.
+**Email delivery is an external configuration requirement.** The project was initially configured with the default Supabase sender; the operator subsequently configured Resend SMTP. Supabase documents that this sender delivers only to project team addresses and has restrictive limits. Configure an approved SMTP provider for public university signups and password-reset delivery. The operator created the domain and Resend account; no paid plan was purchased by the assistant. Do not disable email confirmation to work around delivery restrictions.
 
 References: [Supabase SMTP](https://supabase.com/docs/guides/auth/auth-smtp), [Supabase email passwords](https://supabase.com/docs/guides/auth/passwords), [server-side auth security](https://supabase.com/docs/guides/auth/server-side/advanced-guide).
 
@@ -84,3 +84,9 @@ Future officers can also receive access through the specified USM approval of th
 Run `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`, and `npm run test:browser`. The PostgreSQL test is optional in the default unit command; point `TEST_DATABASE_URL` only at an empty isolated database with the base schema and Supabase-compatible test auth objects. Browser tests start separate temporary demo and real-mode servers on ports 3100 and 3101; they do not write to hosted student data.
 
 Optional chapter-to-chapter collaboration requests are deliberately deferred until the account/email verification workflow is confirmed end to end. No real-time chat, full finance management, binary uploads, or automatic university recognition was added.
+
+## Early pilot email policy
+
+`SIGNUP_EMAIL_POLICY=any` permits verified personal as well as university email accounts. The local pilot uses this setting. Omit it or set `university` to restrict accounts to .edu and approved domains again. The same policy applies to signup, login, recovery, callback validation, session authorization, and operator provisioning. Switching back also blocks existing personal-email accounts from access, so plan migration before changing production. Email verification and protected database roles remain required in both modes. Membership answer field `universityEmail` retains its existing storage name for compatibility; in open mode it contains the verified account email and does not prove university affiliation.
+
+The sending domain `ssa-network-demo.me` has been verified in Resend and custom SMTP was configured by the operator. Charlotte rejected one recovery email; accepting personal accounts does not guarantee delivery to every provider. Test actual delivery before the demo.

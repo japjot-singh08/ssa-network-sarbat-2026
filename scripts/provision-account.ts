@@ -1,6 +1,6 @@
 // Operator-only provisioning. Never expose this script through an application route.
 import postgres from "postgres";
-import { universityEmail } from "../lib/university-email";
+import { accountEmailAllowed } from "../lib/university-email";
 const args = process.argv.slice(2),
   value = (flag: string) => args[args.indexOf(flag) + 1];
 async function main() {
@@ -11,9 +11,13 @@ async function main() {
   const email = value("--email"),
     role = value("--role"),
     chapter = value("--chapter");
-  if (!email || !universityEmail(email) || !["ADMIN", "OFFICER"].includes(role))
+  if (
+    !email ||
+    !accountEmailAllowed(email) ||
+    !["ADMIN", "OFFICER"].includes(role)
+  )
     throw new Error(
-      "Provide --email UNIVERSITY_EMAIL --role ADMIN|OFFICER and optionally --chapter CHAPTER_ID.",
+      "Provide --email ACCOUNT_EMAIL --role ADMIN|OFFICER and optionally --chapter CHAPTER_ID.",
     );
   if (role === "OFFICER" && (!args.includes("--chapter") || !chapter))
     throw new Error("Officers require a chapter.");
@@ -29,7 +33,7 @@ async function main() {
       const users =
         await tx`select id,email,email_confirmed_at,raw_user_meta_data from auth.users where lower(email)=lower(${email})`;
       if (users.length !== 1 || !users[0].email_confirmed_at)
-        throw new Error("A verified university account must exist first.");
+        throw new Error("A verified account must exist first.");
       const u = users[0],
         now = new Date().toISOString();
       if (

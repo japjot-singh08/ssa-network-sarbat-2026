@@ -6,7 +6,7 @@ A working hackathon MVP for Sarbat Build Day 2026, built for United Sikh Movemen
 
 ## Accounts and membership phase
 
-The application now includes native student signup, verified university accounts, private chapter portals, membership applications, and USM review of new chapter proposals. See [AUTHENTICATION.md](AUTHENTICATION.md) for the current setup, testing boundaries, email-delivery requirements, and authorized account provisioning. The original demo remains available at Git tag `demo-baseline-2026-10-16`.
+The application now includes native student signup, verified email accounts, private chapter portals, membership applications, and USM review of new chapter proposals. See [DEPLOYMENT.md](DEPLOYMENT.md) for the real-account Vercel pilot and [AUTHENTICATION.md](AUTHENTICATION.md) for the current setup, testing boundaries, email-delivery requirements, and authorized account provisioning. The original demo remains available at Git tag `demo-baseline-2026-10-16`.
 
 ## Run the demo
 
@@ -95,7 +95,7 @@ No account, paid plan, or hosted infrastructure is created by this repository. U
 
 ### Real accounts and chapter membership
 
-Set `DEMO_MODE=false` and configure `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` server-side. Run `npm run db:migrate:accounts` before starting the extended app. See [AUTHENTICATION.md](AUTHENTICATION.md) for signup, email confirmation, password resets, refresh sessions, role provisioning, chapter membership, private rosters, and new-chapter approval. Email confirmation stays required. Actual successful sign-in verification needs a human-controlled university inbox; the configured project currently uses Supabase's limited default email sender.
+Set `DEMO_MODE=false` and configure `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` server-side. Run `npm run db:migrate:accounts` before starting the extended app. See [AUTHENTICATION.md](AUTHENTICATION.md) for signup, email confirmation, password resets, refresh sessions, role provisioning, chapter membership, private rosters, and new-chapter approval. Email confirmation stays required. The early pilot uses `SIGNUP_EMAIL_POLICY=any` to allow verified personal email accounts. Custom Resend SMTP is configured; recipient delivery must still be tested. Set `SIGNUP_EMAIL_POLICY=university` to restore university restrictions.
 
 ## Architecture and integrity
 

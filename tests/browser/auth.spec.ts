@@ -23,7 +23,7 @@ test("real-account UI and university signup validation, with no self-assigned ro
   await page
     .getByLabel("Preferred name", { exact: true })
     .fill("Validation Test");
-  await page.getByLabel("University email").fill("test@gmail.com");
+  await page.getByLabel("Email address").fill("test@gmail.com");
   await page
     .getByLabel("Password (at least 12 characters)")
     .fill("synthetic-password-never-an-account");

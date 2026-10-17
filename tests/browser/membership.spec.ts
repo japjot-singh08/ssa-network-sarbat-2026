@@ -16,9 +16,18 @@ test("student application → chapter-scoped human approval → private roster a
   await page
     .getByRole("button", { name: /UNC Charlotte SSA UNC Charlotte/ })
     .click();
+  await expect(
+    page.getByRole("region", { name: "Chapter profile", exact: true }),
+  ).toBeFocused();
   await page
     .getByRole("button", { name: "Apply to Join", exact: true })
     .click();
+  await expect(
+    page.getByRole("region", {
+      name: "Chapter membership application",
+      exact: true,
+    }),
+  ).toBeFocused();
   await page.getByLabel("Preferred name *").fill("Fictional Student");
   await page.getByLabel("Academic year *").fill("First year");
   await page
