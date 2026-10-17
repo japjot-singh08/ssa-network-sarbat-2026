@@ -352,7 +352,12 @@ export function applyPortal(s: State, a: Actor, input: PortalAction) {
     );
     if (key) {
       need(
-        !s.chapters.some((c) => universityKey(c.university) === key),
+        !s.chapters.some(
+          (c) =>
+            universityKey(c.university) === key &&
+            (!s.chapters.some((x) => x.isSample === false) ||
+              c.isSample === false),
+        ),
         "A chapter for this university already exists.",
       );
       need(
@@ -447,7 +452,10 @@ export function applyPortal(s: State, a: Actor, input: PortalAction) {
     if (input.decision === "APPROVED") {
       need(
         !s.chapters.some(
-          (c) => universityKey(c.university) === p.universityKey,
+          (c) =>
+            universityKey(c.university) === p.universityKey &&
+            (!s.chapters.some((x) => x.isSample === false) ||
+              c.isSample === false),
         ),
         "A chapter for this university already exists.",
       );

@@ -35,3 +35,49 @@ test("directory import is idempotent, preserves source duplicates, and protects 
   assert.equal(c.bio, "Approved officer-authored profile");
   assert.equal(s.chapters.length, count);
 });
+
+import { applyPortal } from "../lib/membership";
+test("hidden fictional records cannot block a real chapter proposal after public import", () => {
+  const s = seed();
+  importPublicDirectory(s);
+  const student = {
+    id: "new-officer",
+    role: "STUDENT" as const,
+    chapterId: null,
+    verified: true,
+  };
+  applyPortal(s, student, {
+    action: "chapterPropose",
+    submit: true,
+    details: {
+      university: "UNC Charlotte",
+      location: "Charlotte, NC",
+      state: "NC",
+      region: "Southeast",
+      proposedName: "Charlotte SSA",
+      reason: "Start our actual chapter",
+      students: "20",
+      leadership: "Yes",
+      goals: "Connect students",
+      activities: "Community service",
+      support: "USM mentorship",
+    },
+  });
+  const p = s.chapterProposals.find((p) => p.userId === student.id)!;
+  applyPortal(
+    s,
+    { id: "admin", role: "ADMIN", chapterId: null },
+    {
+      action: "proposalReview",
+      proposalId: p.id,
+      decision: "APPROVED",
+      note: "Human approved",
+    },
+  );
+  assert.equal(
+    s.chapters.filter(
+      (c) => c.university === "UNC Charlotte" && c.isSample === false,
+    ).length,
+    1,
+  );
+});
