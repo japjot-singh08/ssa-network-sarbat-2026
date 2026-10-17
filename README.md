@@ -1,16 +1,10 @@
 # SSA Network
 
-A working hackathon MVP for Sarbat Build Day 2026, built for United Sikh Movement (USM). Connect Sikh students through community service, national challenges, verified recognition, shared resources, and Claude-powered planning support.
+A working Sarbat Build Day 2026 MVP for United Sikh Movement (USM): connect Sikh students through community seva, shared opportunities, verified chapter recognition, resources, and Claude-powered planning.
 
-**Demonstration records are fictional.** University chapter names identify sample records, not official participation. Initial Toolkit resources are fictional examples, not USM documents. Grants are tracking records only; the app does not process payments. Scoring is a provisional demo configuration, not adopted USM policy.
+## Start here: run locally without service accounts
 
-## Accounts and membership phase
-
-The application now includes native student signup, verified email accounts, private chapter portals, membership applications, and USM review of new chapter proposals. See [DEPLOYMENT.md](DEPLOYMENT.md) for the real-account Vercel pilot and [AUTHENTICATION.md](AUTHENTICATION.md) for the current setup, testing boundaries, email-delivery requirements, and authorized account provisioning. The original demo remains available at Git tag `demo-baseline-2026-10-16`.
-
-## Run the demo
-
-Requires Node.js 22.13+ (tested on Node 24) and npm.
+Requires **Node.js 24.x** and npm. Extract the source ZIP, open a terminal **inside the extracted folder containing `package.json`**, then run:
 
 ```sh
 npm ci
@@ -18,162 +12,136 @@ npm run setup:demo
 npm run dev
 ```
 
-Open http://localhost:3000. Choose **Enter demo** or **Switch identity** to use a student or fictional chapter officer. Reviewer actions require a private passcode generated in `.env.local`. View it locally with:
+Open **http://localhost:3000**. Choose **Enter demo**, select a student or chapter officer, and enter the demonstration. Use **My account** for private chapter/application tools. Public navigation contains Arena, Leaderboard, National Feed, Toolkit and Sahayak.
+
+To test human review, retrieve your generated local reviewer passcode:
 
 ```sh
 npm run demo:credentials
 ```
 
-Choose USM reviewer and enter that passcode. Do not share it publicly or include it in your recording. The local cookie is signed, HTTP-only, and expires after eight hours. A demonstration officer can only submit on behalf of the selected fictional chapter. Changing roles in the same browser retains a single reaction identity. Browser-based demo identities are not suitable for real student authentication.
+Switch the demo identity to USM reviewer and enter that passcode. Demo identities are for fictional local testing; they are not real authentication. `setup:demo` creates a private `.env.local` only if it does not already exist. For a clean download, do not copy the hosted project's secrets. Never publish the generated passcode.
 
-Local data persists in `.data/state.json`, including approvals and awards. Atomic file replacement and a filesystem transaction lock prevent concurrent updates from losing data. Restarting the app preserves work. To start over, stop the server and move `.data` to a backup location; the next start seeds a new demonstration. If a process crashes while writing, stop all app processes and remove only the stale `.data/transaction.lock` directory. Never reset a hosted database to restart a demo.
+**No Supabase or Claude account is needed for the local workflow.** AI features show a configuration message until you supply your own Anthropic key. Local data and uploads persist under ignored `.data/`; restarting preserves work. To restart the fictional local dataset, stop the server and move `.data` to a private backup location. Never use this procedure on a hosted database. If a process crashes while writing, stop every app instance before removing only a stale `.data/transaction.lock` directory.
 
-For a production-mode local preview:
+For a local production preview, stop the dev server, then run:
 
 ```sh
 npm run build
 npm run start
 ```
 
-Build and dev use webpack for compatibility with environments that restrict Turbopack worker sockets. No external fonts or image services are required.
+The UI is identical to the deployed pilot, but fresh local data is fictional. The hosted pilot's real accounts, imported guides, chapter claims, and private evidence are intentionally absent from the download.
 
-## Restore the original demonstration records
+## What you can test
 
-For a configured **demonstration** database, stop other testing and run:
+1. As a chapter officer, open Arena, accept an open opportunity, then use **My Challenges → Submit evidence**. Provide summary, impact, evidence, participant count and total volunteer-hours. Upload a PDF or image if useful.
+2. Switch to USM reviewer, open **My account → USM review desk**, inspect the evidence, and approve, reject or request clarification. Approval awards chapter points once and creates a verified feed post; retrying cannot duplicate awards.
+3. Open Leaderboard and National Feed. Another signed-in student can give Shabash. Proposed student stories stay pending until human publication.
+4. As a student without a chapter, choose **Join individually** on an Arena opportunity. Record personal completion under My Challenges. These self-reported records do not award chapter points/grants or change verified impact.
+5. Browse/search Toolkit. With Claude configured, ask Sahayak for a project plan and open its cited resources.
 
-```sh
-npm run reset:demo -- --confirm-demo-reset
-```
+For new hosted accounts, chapter claims and membership applications require the appropriate human approval. Admin roles are never self-assigned during signup.
 
-This requires `DEMO_MODE=true`, saves a private local snapshot under `.data/backups`, and replaces application records atomically with the original fictional seed. It refuses to run if provisioned real-account profiles exist. It never deletes Supabase Auth accounts. The restored seed includes one Stanford achievement with 223 points; test submissions, other awards, grants, and reactions are removed. This is an intentional reset, not a production administration tool. Backups and credentials are excluded from Git and the source ZIP.
+## Features
 
-## What works
+- **Arena:** searchable regional marketplace, shared/limited/one-chapter opportunities, eligibility, completion criteria, acceptance and evidence. Individual participation is available without an SSA.
+- **Community requests:** anyone may submit a private help request. Authorized reviewers can ask Claude to structure English, Punjabi or Pinglish text, flag unknowns, and load an editable publishing form. AI cannot verify organizer legitimacy; a human confirms and publishes.
+- **Review and recognition:** role-protected human decisions; atomic points, eligible grant records and verified feed publication. Grants are tracking records, not payments. Chapter size must be known before size-normalized points are awarded.
+- **Feed:** student/officer stories, optional pictures, human moderation, verified achievement posts and toggleable Shabash. No public comments.
+- **Directory:** searchable chapters, interactive map, executive-board claims, membership requests and private chapter portals.
+- **Toolkit:** search, categories, resource reader and administrator import of approved document text. A Google Drive link alone does not ingest a document.
+- **Sahayak:** Claude answers grounded in retrieved Toolkit text and open Arena requirements, validated source IDs, readable Markdown and source links. AI does not approve work, award points or commit funds.
+- **Evidence files:** chapter claims, chapter completion and individual completion accept PDFs up to 3 MB or JPEG/PNG/WebP pictures. Images are resized to a maximum 1600px edge and converted to JPEG; server JPEG limit is 1.5 MB. Written explanations remain required. PDFs download as attachments. Files use unguessable capability links: anyone holding the full link can retrieve the file. Keep evidence links within the review workflow and do not upload sensitive personal records.
 
-- **Arena:** search, category/type/region/reward/deadline/status filters, full requirements, interest saving, officer acceptance, My Challenges, and evidence submission.
-- **Evidence:** summary, impact, supporting text, optional external document/image link, participant count, and total volunteer-hours. Evidence is visible only to the chapter and reviewers. Rejected or clarification-requested submissions can be revised. Binary file uploads are not implemented; linked evidence must be accessible to the reviewer.
-- **USM review desk:** human approval, rejection, and information requests; feedback; verified effort and score preview; explicit grant-eligibility confirmation.
-- **Recognition:** one point-ledger transaction per approved submission, national semester rankings, chapter profiles, and grant tracking summaries. Participant counts do not multiply points.
-- **Feed:** transactional verified achievement posts, officer-proposed posts, AI caption screening when configured, human moderation, and one toggleable Shabash per signed-in identity and post. No public comments.
-- **Toolkit:** browse, category filters, full-text term search, resource reader, original source links, and administrator imports of approved public document text. Drive links alone do not ingest documents.
-- **Sahayak:** server-only official Anthropic SDK, lightweight keyword retrieval over approved Toolkit text, actionable advisory answers, source-ID validation, and links to only retrieved sources. Shows an honest setup state without an API key.
-- **Community requests:** reviewer-only Claude extraction from English, Punjabi, and Pinglish into editable fields; missing details require clarification; publication requires explicit human confirmation.
-- **Matching:** deterministic distance, region, skills, experience, availability, and calendar factors. Unknown calendars, exams, and coordinates stay explicitly unknown.
-- **Accounts:** signed demonstration sessions; Supabase Auth signup/sign-in/sign-out/reset and verified university accounts when demo mode is disabled; protected membership-based officer and operator-provisioned administrator roles.
+## Optional: enable Claude
 
-## Configure Claude
-
-Add these server-only settings to `.env.local` or your hosting environment:
+Add your own server-only settings to `.env.local`, then restart:
 
 ```dotenv
 ANTHROPIC_API_KEY=your-private-key
-ANTHROPIC_MODEL=claude-sonnet-4-5
+ANTHROPIC_MODEL=claude-sonnet-4-6
 ```
 
-Use a model available to your Anthropic account; change the model setting if needed. Restart after changing server settings. The app makes no AI calls without a key and never sends a key to the client. Live calls incur your Anthropic account's API usage charges. The prompt includes only the question and relevant approved resource text. Request extraction sends the pasted message. Caption screening sends the proposed public caption. Do not paste confidential information.
+Use a model available to your Anthropic account. API calls incur that account's usage charges. Without a key, the rest of the app still works. Sahayak sends the question and relevant excerpts; request processing sends request text; caption screening sends proposed public captions. Do not submit confidential information. Keys never belong in client-prefixed environment variables, Git, recordings or the source ZIP.
 
-Sahayak validates structured answers and source IDs; invented source IDs cause an error rather than a fabricated citation. Fictional resources stay labeled. AI is advisory and cannot publish content, award points, commit funds, or approve submissions. Caption flags remain subject to human review, and failed screening holds content for review.
+## Optional: deploy with Supabase and real accounts
 
-Official integration references: [Anthropic TypeScript SDK](https://platform.claude.com/docs/en/cli-sdks-libraries/sdks/typescript), [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), [Next.js request handlers](https://nextjs.org/docs/app/api-reference/functions/next-request).
+Local file persistence is deliberately disabled on Vercel. A hosted deployment requires PostgreSQL. Use a dedicated Supabase project and your own accounts/secrets; downloading the source does not provide access to the team's hosted services.
 
-## Supabase and Vercel deployment
-
-No account, paid plan, or hosted infrastructure is created by this repository. Use a **dedicated demonstration Supabase project** first. Local file persistence is deliberately disabled on Vercel to prevent ephemeral or lost records.
-
-1. Create/select a Supabase project you control. After saving its private pooler URI as `DATABASE_URL` in `.env.local`, you can run `npm run db:setup` to apply the schema and seed an empty database, then `npm run db:verify` to check access controls and rollback. These commands preserve existing application records and refuse a partial schema. Alternatively, run `supabase/schema.sql` once in its SQL editor. The migration creates normalized tables, foreign keys, indexes, unique award/reaction constraints, and RLS policies. It is a fresh-install migration, not a repeatable upgrade script.
-2. Copy the private PostgreSQL transaction-pooler connection URL to `DATABASE_URL` in `.env.local`. URL-encode special password characters. This URL is a server secret. Use the Supabase pooler host and port supplied by your dashboard; prepared statements are disabled in the adapter.
-3. Seed only an empty demonstration database:
+1. Copy `.env.example` to `.env.local` if no local file exists. Set `DATABASE_URL` to your Supabase PostgreSQL pooler URI. Percent-encode special characters in its password. Set a random `SESSION_SECRET` of at least 32 characters.
+2. For a **fresh demonstration database**, run:
 
    ```sh
-   npm run seed:supabase
+   npm run db:setup
+   npm run db:verify
    ```
 
-   This command refuses to replace an existing chapter dataset. Do not seed actual USM operations with fictional data.
+   `db:setup` applies the base schema, all tracked migrations, and fictional seed data to an empty database. It preserves existing records and refuses partial base schemas. Do not also reseed a populated database. For an existing compatible installation, run `npm run db:migrate:accounts` before deploying this version. Migrations 002–008 include memberships, directory claims, community intake, media storage and individual participation.
+3. For real authentication set `DEMO_MODE=false`, `SUPABASE_URL`, and `SUPABASE_PUBLISHABLE_KEY`. Choose `SIGNUP_EMAIL_POLICY=any` for verified personal-email pilot accounts, or `university` for .edu and configured `UNIVERSITY_EMAIL_DOMAINS`. Personal email does not prove university affiliation. Email confirmation remains required.
+4. Configure your own SMTP provider in Supabase Auth for public signup/recovery emails. Configure Supabase Site URL to your app's exact origin, and allow `/auth/callback` and `/auth/callback?next=password` URLs for the hosted origin and any intended localhost development origin. Some institutional inboxes may reject pilot emails; test delivery and recovery with an address you control.
+5. Create and verify your initial administrator account through the app, then explicitly provision that authorized account from your private terminal:
 
-4. Push the source to a private or public Git repository after verifying `.env.local` and `.data` are ignored. Import the repository into Vercel, choose Next.js, use Node 24 (or 22.13+), and use the standard build command `npm run build`.
-5. Configure Vercel environment variables: `DATABASE_URL`, `SESSION_SECRET` (at least 32 random characters), `DEMO_MODE=true`, and a long private `DEMO_REVIEWER_PASSCODE`. Optionally configure `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL`. Keep the reviewer passcode private. Anonymous public visitors can browse and select fictional student/officer identities, but cannot become reviewers without the passcode.
-6. Deploy and repeat the complete demo journey on the deployed URL. Confirm refresh persistence, duplicate approval protection, and AI citations with your actual account. Those external integrations cannot be certified without credentials.
+   ```sh
+   npm run account:grant -- --email YOUR_VERIFIED_EMAIL --role ADMIN --confirm-role-grant
+   ```
 
-### Real accounts and chapter membership
+   This requires the configured private database connection and does not create a password. Grant administrator access only to an authorized operator. Chapter officers normally obtain scoped access through approved chapter claims/proposals.
+6. Import the public directory if desired:
 
-Set `DEMO_MODE=false` and configure `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` server-side. Run `npm run db:migrate:accounts` before starting the extended app. See [AUTHENTICATION.md](AUTHENTICATION.md) for signup, email confirmation, password resets, refresh sessions, role provisioning, chapter membership, private rosters, and new-chapter approval. Email confirmation stays required. The early pilot uses `SIGNUP_EMAIL_POLICY=any` to allow verified personal email accounts. Custom Resend SMTP is configured; recipient delivery must still be tested. Set `SIGNUP_EMAIL_POLICY=university` to restore university restrictions.
+   ```sh
+   node --env-file=.env.local --import tsx scripts/import-usm-directory.ts
+   ```
+
+   This imports 82 public listings from the source snapshot with attribution and unclaimed ownership. It saves a private backup and protects approved officer-owned chapters. It does not import private student rosters. The source is USM's public directory: https://www.unitedsikhmovement.org/ssas . Local seed chapters are fictional.
+7. Import the repository into Vercel: Next.js, repository root, Node 24.x, install `npm ci`, build `npm run build`. Add the same server environment variables to Vercel; `.env.local` is not uploaded. Optionally add your Anthropic key/model. Keep `DEMO_MODE=false` for real accounts. The existing team pilot uses branch `deploy-pilot`; a new installation can use `main`.
+8. Verify hosted signup/email/callback, login/logout/recovery, chapter claims, evidence downloads, human approvals, refresh persistence, duplicate-award protection, feed and AI citations. See [AUTHENTICATION.md](AUTHENTICATION.md) and [DEPLOYMENT.md](DEPLOYMENT.md) for additional details.
+
+Optional fictional feed stories can be seeded with `node --env-file=.env.local --import tsx scripts/seed-feed-samples.ts`. This adds or refreshes only the three known sample records. It does not award points. Add your approved real guides through the reviewer Toolkit import workflow; the source ZIP does not include the team's private database exports.
+
+## Demo data and limitations
+
+Fictional challenges, sample standings and stories are labeled. Sample feed pictures were AI-generated and do not document actual chapter events. Public directory entries are attributed listings, not verified ownership or claims of current participation. Toolkit content identifies whether it is a fictional example or an approved imported resource. Scoring is a provisional configuration requiring USM approval, not adopted policy. No payments or automatic approvals occur.
+
+The deployed pilot has been exercised with real Supabase accounts, PostgreSQL persistence, Vercel and Claude. This does not guarantee every recipient's email delivery or every language/model response. No audio transcription, public comments, malware scanning service or full upload-management console is included. Unused uploads require operator cleanup. Per-process rate limits are best-effort on serverless infrastructure. A supported pilot is the intended scale.
 
 ## Architecture and integrity
 
-`app/network.tsx` composes the responsive interface. `lib/domain.ts` owns validated actions, role checks, scoring, retrieval, matching, and approval behavior. `lib/store.ts` provides persistence; `lib/auth.ts` provides sessions and same-origin checks. `app/api/` routes are the only client mutation boundary. `supabase/schema.sql` is the PostgreSQL schema.
+Next.js + TypeScript + Tailwind CSS; Supabase PostgreSQL/Auth; Anthropic SDK; Vercel-compatible hosting. `app/network.tsx` and `app/portals.tsx` implement the interface. `lib/domain.ts` validates Arena actions; `lib/membership.ts` implements account/chapter permissions. API routes authorize mutations server-side. `lib/store.ts` supports atomic local JSON persistence or PostgreSQL transactions. Base SQL is in `supabase/schema.sql`; incremental migrations are in `supabase/migrations/`.
 
-A submission approval changes status, records the reviewer/verified effort, inserts the point ledger award, optionally records an eligible grant, and creates a factual verified feed post **inside one transaction**. Repeated approvals return success without creating another award or post. Database unique constraints add a second layer of protection. File mode holds a cross-process lock and commits with an atomic rename; PostgreSQL mode holds an advisory transaction lock and commits using `postgres.begin()`.
+Human approval, the unique point award, eligible grant record and verified feed post commit together. Duplicate approvals are idempotent. PostgreSQL foreign keys, unique constraints and RLS provide additional controls; sensitive tables have no direct anonymous/authenticated writes. The app's PostgreSQL adapter uses a transaction advisory lock and loads small domain tables, writing only changed rows. It is not designed for national-scale datasets or concurrent external writers. Points/grants/audit entries are immutable through the adapter. Supabase Auth's `auth.users` is not rewritten.
 
-For this small MVP, the PostgreSQL adapter reads the domain tables under a transaction lock and writes only inserted, changed, or removed rows in foreign-key order. Point and grant ledger entries are immutable in this adapter. This favors a single, testable domain implementation and is **not intended for large datasets or parallel external writers**. All domain writes must go through this app. Move to focused SQL commands/RPCs and database-enforced append-only ledger permissions before national production scale. Supabase Auth's own `auth.users` data is never rewritten.
+Retrieval is weighted keyword matching over at most three Toolkit resources plus relevant open Arena challenges. Chapter matching uses recorded location, skills, experience and availability; unknown calendars/exams remain unknown. No vector database is required.
 
-Retrieval uses deterministic weighted keyword overlap (title weight 4, content weight 1), with at most three resources. No vector database is required. The PostgreSQL schema includes a full-text GIN index for future query-based retrieval; the current adapter shares the same small in-memory ranking used locally. Matching is advisory; it does not make commitments on behalf of chapters.
+Provisional scoring: `round(base × effort × sizeFactor)`, where effort is `1 + 0.25 × min(verified volunteer-hours / 20, 1)` and sizeFactor is `clamp(sqrt(40 / chapter size), 0.8, 1.2)`. Participant counts do not multiply points. Reviewers cannot verify more hours than reported.
 
-### Demo scoring formula
-
-```text
-score = round(base_points × effort_factor × size_factor)
-effort_factor = 1 + 0.25 × min(verified_total_volunteer_hours / 20, 1)
-size_factor = clamp(sqrt(40 / chapter_size), 0.8, 1.2)
-```
-
-Configuration lives in `SCORING` in `lib/domain.ts`. Effort bonuses cap at 20 total volunteer-hours. Participation count is descriptive and does not affect points. Reviewers cannot verify more hours than reported. Reviewers inspect the computed score and verify grant eligibility separately. This is a configurable demo proposal requiring USM approval before actual awards.
-
-## Verification
+## Run the checks
 
 ```sh
 npm run typecheck
 npm run lint
 npm test
 npm run build
-npx playwright install chromium  # once, if Chromium is not installed
+npx playwright install chromium
 npm run test:browser
 ```
 
-Browser tests start an isolated production-mode server on port 3100 and use a temporary dataset plus synthetic test credentials. They require an existing production build. Unit tests also validate retrieval/citation grounding and the official Anthropic SDK with mocked transport (no live service). PostgreSQL integration tests were run against an isolated local PostgreSQL 18 cluster, including the migration, adapter, concurrent approvals, rollback, unique constraints, and public read/write restrictions. To repeat those tests, provide `TEST_DATABASE_URL` for an empty isolated database with `supabase/schema.sql` applied and Supabase-compatible `auth.users`, `auth.uid()`, `anon`, and `authenticated` test objects. Set `DATABASE_SSL=disable` only for a trusted local test database; hosted connections require TLS by default.
+Browser tests require the build and Chromium. They launch isolated servers on **3100 and 3101**, with temporary fictional data and synthetic credentials; keep those ports free. Set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` if using an existing compatible Chromium installation. Tests do not require real service credentials or make paid AI calls.
 
-Unit tests cover human-only approval, idempotent awards, private evidence, revisions, role restrictions, score bounds, Toolkit retrieval, matching unknowns, safe URLs, signed sessions, caption moderation, file concurrency, and rollback. Browser tests cover the student/officer/reviewer journey, duplicate approval retries, resulting rankings, persistent Shabash, Toolkit search, missing-key behavior, cross-origin protection, and mobile overflow.
+Unit tests cover permissions, evidence privacy, atomic/idempotent awards, claims, matching, retrieval and mocked AI. Browser checks cover the full student/officer/reviewer journey, PDF/image upload and retrieval, individual participation, map/claims, moderation, Markdown, mobile layout and same-origin protection. The optional PostgreSQL test skips unless `TEST_DATABASE_URL` points to an empty isolated test database with the base schema and Supabase-compatible auth objects. Never point that test at the pilot database. See `tests/postgres.test.ts` for prerequisites; use `DATABASE_SSL=disable` only for trusted local PostgreSQL.
 
-**Requires external validation:** live Supabase connectivity and RLS behavior, real-account sign-in, live Claude quality/latency/billing, Punjabi/Pinglish extraction quality, and deployed Vercel workflows. The hosted Supabase connection, schema, seeded data, public/private access restrictions, and rollback have now been verified against the configured demo project. Supabase Auth, live Claude calls, and Vercel deployment remain unverified. No audio transcription, binary upload, real payment processing, or video generation is included.
+## Package and hand over
 
-## Five-minute demonstration
+`main` contains the current submission source. `deploy-pilot` is the production deployment branch; `feature/accounts-memberships` tracks development. The original checkpoint is preserved at tag `demo-baseline-2026-10-16`.
 
-See `DEMO.md` for a timed recording script and preflight. The team records and edits the video. The submission bundle includes a one-page PDF and a source ZIP with this README and the MIT license. No credentials, private documents, local evidence data, or generated dependency folders should enter the ZIP.
+Download GitHub **Code → Download ZIP** while `main` is selected, or use the cleaned submission archive. To regenerate that archive locally:
+
+```sh
+python3 scripts/package_source.py
+```
+
+It creates `outputs/SSA-Network-Source.zip` containing source, setup instructions, placeholder `.env.example`, tests and MIT license. It excludes credentials, `.data`, backups, dependencies, build output and private database exports, and checks configured secrets are absent. Rename the archive to your team's required submission filename. Do not add test-account passwords to the source archive. The team records its own video; no video is generated by the app.
 
 ## License
 
-MIT. See `LICENSE`.
-
-### Public USM directory and executive-board claims
-
-`lib/usm-directory.json` contains the 82 public chapter names, institutions, campus locations and coordinates published at https://www.unitedsikhmovement.org/ssas (retrieved October 16, 2026). It contains no student roster, private email, or board member information. Source URLs are retained for attribution. Ownership status on this app is independent of USM's existing website.
-
-To import into the configured Supabase project, run:
-
-```sh
-node --env-file=.env.local --import tsx scripts/import-usm-directory.ts
-```
-
-The importer first saves a private backup under ignored `work/`, preserves accounts and approved officer-owned chapters, and labels imported listings `UNCLAIMED`. Re-running it updates unclaimed source listings without granting account access. Local demo seed data remains fictional; the hosted directory import is deliberate.
-
-A verified signed-in user opens a chapter profile and submits their executive-board position, verification evidence and attestation. Claims appear under **My account → My applications**. USM admins review them under **My account → USM administration**, verify evidence through a trusted chapter contact, and approve, decline, or request changes. Evidence stays private to the applicant and administrators. Approval updates the existing chapter and grants only chapter-scoped officer membership in one transaction. Pending and duplicate claims do not grant access. Membership applications open after ownership approval. A successful claim here does not modify USM's other website or confirm university recognition.
-
-Imported membership counts are stored as `0` meaning **unknown**, not a reported count. Migration `005_unclaimed_directory` supports this. Officers can set the current count under My SSA → Chapter Profile. Arena approval cannot award size-normalized points while the count is unknown.
-
-### Community requests, Arena impact and AI assistance
-
-Anyone can use Arena → **Request community help** without creating an account. The request and contact email are stored in the private USM inbox; nothing is automatically published. USM reviewers use **Community requests** in the review desk to screen with Claude, inspect missing information and verification steps, and load an editable publishing form. AI cannot establish organizer legitimacy: USM must verify through an independent trusted contact. Reviewers can decline or publish, and publication is idempotent. Administrators can also use **Add an Arena opportunity** directly from Arena.
-
-Migration `006_community_requests` creates the inbox with RLS enabled and no direct anonymous/authenticated grants. Public submissions have server validation, a honeypot and rate limiting; AI screening is restricted to authenticated administrators. Contact emails are excluded from the Claude screening payload and public Arena cards.
-
-Arena impact counters include only approved submissions on non-sample opportunities and use human-verified hours. Sahayak retrieves relevant open Arena requirements alongside Toolkit documents and validates source IDs. Claude uses a forced formatting tool for structured responses; that tool performs no external action. Answers render Markdown headings, lists and tables safely with raw HTML disabled. Missing AI configuration remains an explicit setup state. Set `ANTHROPIC_API_KEY` only on the server.
-
-### Pictures and sample feed stories
-
-Chapter officers can attach one picture when proposing a National Feed post. Community members can attach one to a help request. The browser resizes to a maximum 1600px edge and re-encodes as JPEG, stripping original metadata. Server uploads accept JPEGs up to 1.5 MB, validate file signatures, and use rate limiting. Preview/removal work before submission. Request images carry through the human publishing form; verified achievement posts inherit the challenge picture. Feed images remain subject to human moderation.
-
-Migration `007_post_images` stores uploaded image bytes in the existing Supabase PostgreSQL database with RLS enabled and no direct public table grants, avoiding additional service credentials. Local demo uploads persist under the ignored demo data directory. Images use random, capability-protected links: anyone holding a full image link can view it. Public cards expose links only when published. Do not upload private or nonconsensual photos. Unused upload cleanup and a full media-management console are outside this MVP.
-
-Three fictional demonstration feed posts use original SVG illustrations in `public/demo`, explicitly labeled as samples. They do not assert actual chapter events or grant points. Seed them idempotently with `node --env-file=.env.local --import tsx scripts/seed-feed-samples.ts` (omit `--env-file` for a local demo without that file).
-
-Students without an SSA can use Arena’s **Join individually** action and record a private, self-reported completion under My Challenges. This does not reserve chapter capacity, award points or grants, or contribute to verified impact. Participants must confirm organizer availability and eligibility. All verified signed-in students may propose feed stories with pictures; a human reviewer must publish them. Example leaderboard standings and AI-illustrated fictional feed recaps are explicitly labeled and never write awards to the ledger. Migration 008 adds individual participation and student authorship.
-
-Evidence uploads: chapter challenge submissions, executive-board chapter claims, and individual completion forms accept a PDF (up to 3 MB) or JPEG/PNG/WebP picture. Pictures are resized and converted to JPEG. Written evidence remains required. Uploaded PDFs download as attachments; files use unguessable capability links, so anyone given the complete link can retrieve them. Do not upload sensitive personal records. Pending evidence links are shown only in the relevant private workflow, and are never automatically published to the feed.
+MIT. See [LICENSE](LICENSE).
