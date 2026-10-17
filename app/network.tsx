@@ -3,6 +3,7 @@ import {
   useCallback,
   useEffect,
   useState,
+  useRef,
   type FormEvent,
   type ReactNode,
 } from "react";
@@ -43,6 +44,7 @@ import {
   type Submission,
 } from "@/lib/types";
 import { matching, score, semester, submissionContext } from "@/lib/domain";
+import ReactMarkdown from "react-markdown";
 import { AuthPanel, Portals } from "./portals";
 type View =
   | "home"
@@ -153,11 +155,32 @@ export default function Network() {
     [busy, setBusy] = useState(false),
     [view, setView] = useState<View>("home"),
     [mobile, setMobile] = useState(false),
+    [accountOpen, setAccountOpen] = useState(false),
     [identity, setIdentity] = useState(false),
     [detail, setDetail] = useState<Challenge | null>(null),
     [submission, setSubmission] = useState<string | null>(null),
     [resource, setResource] = useState<Document | null>(null),
     [chapterId, setChapterId] = useState<string | null>(null);
+  const accountRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!accountOpen) return;
+    const outside = (e: PointerEvent) => {
+      if (!accountRef.current?.contains(e.target as Node))
+        setAccountOpen(false);
+    };
+    const escape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setAccountOpen(false);
+        accountRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [accountOpen]);
   const [q, setQ] = useState(""),
     [category, setCategory] = useState("All categories"),
     [type, setType] = useState("All types"),
@@ -235,6 +258,7 @@ export default function Network() {
     }
   }, [state]);
   const go = (v: View) => {
+    setAccountOpen(false);
     setView(v);
     setQ("");
     setCategory("All categories");
@@ -319,15 +343,7 @@ export default function Network() {
           <article className="challenge-card" key={c.id}>
             <div className={"card-art art-" + (i % 4)}>
               <div className="art-grid" />
-              <span className="art-word">
-                {c.category === "Technology"
-                  ? "BUILD."
-                  : c.category === "Sikh Awareness"
-                    ? "CONNECT."
-                    : c.category === "Interchapter Collaboration"
-                      ? "TOGETHER."
-                      : "GIVE."}
-              </span>
+              <span className="art-word">{String(i + 1).padStart(2, "0")}</span>
               <span className="art-icon">
                 {c.category === "Technology" ? (
                   <GraduationCap size={60} />
@@ -459,27 +475,8 @@ export default function Network() {
             SSA Network<small>UNITED SIKH MOVEMENT</small>
           </span>
         </button>
-        <div className="nav-label">A SHARED PURPOSE</div>
+        <div className="nav-label">THE CAMPUS NETWORK</div>
         <nav>
-          {state.actor.id !== "guest" &&
-            [
-              ["dashboard", "My dashboard", Home],
-              ["myssa", "My SSA", Users],
-              ["applications", "My applications", BookOpen],
-              ["profile", "My profile", GraduationCap],
-            ].map(([id, label, Icon]) => {
-              const ItemIcon = Icon as typeof Home;
-              return (
-                <button
-                  key={String(id)}
-                  className={"nav-item " + (view === id ? "active" : "")}
-                  onClick={() => go(id as View)}
-                >
-                  <ItemIcon size={18} />
-                  {String(label)}
-                </button>
-              );
-            })}
           <button
             className={"nav-item " + (view === "directory" ? "active" : "")}
             onClick={() => go("directory")}
@@ -487,15 +484,6 @@ export default function Network() {
             <Users size={18} />
             Explore Chapters
           </button>
-          {state.actor.role === "ADMIN" && (
-            <button
-              className={"nav-item " + (view === "admin" ? "active" : "")}
-              onClick={() => go("admin")}
-            >
-              <ShieldCheck size={18} />
-              USM administration
-            </button>
-          )}
           {nav.map(([id, label, Icon]) => (
             <button
               className={"nav-item " + (view === id ? "active" : "")}
@@ -508,55 +496,15 @@ export default function Network() {
             </button>
           ))}
         </nav>
-        <div
-          className={
-            "sidebar-note " + (state.actor.id !== "guest" ? "compact-note" : "")
-          }
-        >
-          <span className="tiny-star">✦</span>
-          <h4>
-            Small acts.
+        <div className="network-colophon">
+          <span>EST. 2026 / USM</span>
+          <p>
+            Built by students.
             <br />
-            Collective impact.
-          </h4>
-          <p>Your next act of seva could start a movement.</p>
-          <button onClick={() => go("arena")}>
-            Find your next challenge <ArrowRight size={15} />
-          </button>
-        </div>
-        <div className="sidebar-bottom">
-          {state.actor.role === "ADMIN" && (
-            <button
-              className={"nav-item " + (view === "review" ? "active" : "")}
-              onClick={() => go("review")}
-            >
-              <ShieldCheck size={18} /> USM review desk
-            </button>
-          )}
-          <button
-            className="identity"
-            onClick={() =>
-              !state.demo && state.actor.id !== "guest"
-                ? go("profile")
-                : setIdentity(true)
-            }
-          >
-            <span className="avatar">
-              {chapter ? "UW" : state.actor.role === "ADMIN" ? "U" : "S"}
-            </span>
-            <span>
-              <b>
-                {chapter?.name ||
-                  (state.actor.role === "ADMIN"
-                    ? "USM reviewer"
-                    : state.actor.name || "Student explorer")}
-              </b>
-              <small>
-                {state.demo ? "Demo identity" : "Account"} ·{" "}
-                {state.actor.role.toLowerCase()}
-              </small>
-            </span>
-            <ChevronRight size={15} />
+            Held together by seva.
+          </p>
+          <button onClick={() => go("directory")}>
+            Find your chapter <ArrowUpRight size={14} />
           </button>
         </div>
       </aside>
@@ -573,28 +521,114 @@ export default function Network() {
           <span className="breadcrumb">
             Your community <ChevronRight size={13} /> <b>{pageTitle}</b>
           </span>
-          <div className="row">
-            <span className="live-dot" />
-            <span className="top-note">
-              Sarbat da bhala · Well-being for all
-            </span>
+          <div className="account-area" ref={accountRef}>
+            <span className="top-note">SEVA / SANGAT / VIDYA</span>
             <button
               className="top-profile"
+              aria-expanded={
+                state.actor.id !== "guest" ? accountOpen : undefined
+              }
+              aria-controls={
+                state.actor.id !== "guest" ? "account-panel" : undefined
+              }
               onClick={() =>
-                !state.demo && state.actor.id !== "guest"
-                  ? go("profile")
-                  : setIdentity(true)
+                state.actor.id === "guest"
+                  ? setIdentity(true)
+                  : setAccountOpen(!accountOpen)
               }
             >
-              <LogIn size={16} />
-              {state.demo
-                ? state.actor.id === "guest"
+              <span className="account-monogram" aria-hidden="true">
+                {state.actor.name?.slice(0, 1).toUpperCase() ||
+                  (state.actor.role === "ADMIN" ? "U" : "S")}
+              </span>
+              {state.actor.id === "guest"
+                ? state.demo
                   ? "Enter demo"
-                  : "Switch identity"
-                : state.actor.id === "guest"
-                  ? "Sign in / Join"
-                  : "My account"}
+                  : "Sign in / Join"
+                : "My account"}
+              <ChevronRight size={14} />
             </button>
+            {accountOpen && state.actor.id !== "guest" && (
+              <div
+                className="account-panel"
+                id="account-panel"
+                aria-label="Account tools"
+              >
+                <div className="account-panel-heading">
+                  <b>
+                    {state.actor.name ||
+                      (state.actor.role === "ADMIN"
+                        ? "USM reviewer"
+                        : "Your account")}
+                  </b>
+                  <span>
+                    {state.actor.role === "ADMIN"
+                      ? "USM administrator"
+                      : state.actor.role === "OFFICER"
+                        ? "Chapter officer"
+                        : "Student"}
+                  </span>
+                  {chapter && <small>{chapter.name}</small>}
+                </div>
+                {[
+                  ["dashboard", "My dashboard", Home],
+                  ["myssa", "My SSA", Users],
+                  ["applications", "My applications", BookOpen],
+                  ["profile", "My profile", GraduationCap],
+                ].map(([id, label, Icon]) => {
+                  const I = Icon as typeof Home;
+                  return (
+                    <button key={String(id)} onClick={() => go(id as View)}>
+                      <I size={17} />
+                      {String(label)}
+                      <ArrowUpRight size={13} />
+                    </button>
+                  );
+                })}
+                {state.actor.role === "ADMIN" && (
+                  <div className="admin-tools">
+                    <span>USM WORKSPACE</span>
+                    <button onClick={() => go("admin")}>
+                      <ShieldCheck size={17} />
+                      USM administration
+                      <ArrowUpRight size={13} />
+                    </button>
+                    <button onClick={() => go("review")}>
+                      <CheckCircle2 size={17} />
+                      USM review desk
+                      <ArrowUpRight size={13} />
+                    </button>
+                  </div>
+                )}
+                {state.demo ? (
+                  <button
+                    onClick={() => {
+                      setAccountOpen(false);
+                      setIdentity(true);
+                    }}
+                  >
+                    <LogIn size={17} />
+                    Switch identity
+                  </button>
+                ) : (
+                  <button
+                    onClick={async () => {
+                      try {
+                        await request("/api/auth", { mode: "logout" });
+                        setAccountOpen(false);
+                        await refresh();
+                        go("home");
+                      } catch (e) {
+                        setToast((e as Error).message);
+                      }
+                    }}
+                  >
+                    <LogIn size={17} />
+                    Sign out
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </header>
         {(state.demo || state.sampleData) && (
@@ -634,16 +668,11 @@ export default function Network() {
             <>
               <div className="page-intro">
                 <div>
-                  <div className="eyebrow">SEVA. SANGAT. SOMETHING BIGGER.</div>
-                  <h1>
-                    A shared purpose.
-                    <br />A stronger community.
-                  </h1>
+                  <div className="eyebrow">THE STUDENT COMMONS / ISSUE 01</div>
+                  <h1>Your campus. Our community.</h1>
                   <p>
-                    A home for Sikh students to connect, serve, and make a
-                    difference.
-                    <br className="desktop-only" /> Across campuses. Across the
-                    country. Together.
+                    Find your SSA, share what works, and make something useful
+                    happen together.
                   </p>
                 </div>
                 <Badge tone="outline">
@@ -668,11 +697,11 @@ export default function Network() {
               </div>
               <section className="hero">
                 <div className="hero-copy">
-                  <Badge tone="hero-badge">INTRODUCING ARENA</Badge>
+                  <Badge tone="hero-badge">THIS WEEK / THE ARENA</Badge>
                   <h2>
-                    Good intentions.
+                    A little time.
                     <br />
-                    <em>Real-world impact.</em>
+                    <em>Something that matters.</em>
                   </h2>
                   <p>
                     Find a cause that moves you. Bring your chapter.
@@ -689,28 +718,36 @@ export default function Network() {
                     COMMUNITY REQUESTS + NATIONAL CHALLENGES
                   </div>
                 </div>
-                <div className="hero-art" aria-hidden="true">
-                  <div className="orbit orbit-one" />
-                  <div className="orbit orbit-two" />
-                  <div className="orbit orbit-three" />
-                  <div className="floating-tag tag-one">
-                    <HandHeart size={19} /> Rooted in seva
-                  </div>
-                  <div className="hero-center">
-                    <span>
-                      <Users size={62} strokeWidth={1} />
-                    </span>
-                    <b>
-                      ONE COMMUNITY.
-                      <br />
-                      LIMITLESS POSSIBILITY.
-                    </b>
-                  </div>
-                  <div className="floating-tag tag-two">
-                    <Users size={19} /> Stronger together
-                  </div>
-                  <div className="spark spark-one">✦</div>
-                  <div className="spark spark-two">✦</div>
+                <div className="dispatch-board">
+                  <span className="eyebrow">FIELD NOTES / START HERE</span>
+                  <button onClick={() => go("directory")}>
+                    <span>01</span>
+                    <div>
+                      <b>Find your people</b>
+                      <small>
+                        {state.chapters.length} campus chapters to explore
+                      </small>
+                    </div>
+                    <ArrowUpRight size={20} />
+                  </button>
+                  <button onClick={() => go("arena")}>
+                    <span>02</span>
+                    <div>
+                      <b>Put seva into practice</b>
+                      <small>
+                        {state.challenges.length} opportunities in the Arena
+                      </small>
+                    </div>
+                    <ArrowUpRight size={20} />
+                  </button>
+                  <button onClick={() => go("feed")}>
+                    <span>03</span>
+                    <div>
+                      <b>See what’s happening</b>
+                      <small>Stories and projects from the network</small>
+                    </div>
+                    <ArrowUpRight size={20} />
+                  </button>
                 </div>
               </section>
               <div className="stats">
@@ -1967,14 +2004,9 @@ function Sahayak({
         <Sparkles size={34} />
       </div>
       <div className="eyebrow">MEET SAHAYAK</div>
-      <h1>
-        A little guidance.
-        <br />A world of possibility.
-      </h1>
+      <h1>What are you planning?</h1>
       <p className="muted">
-        Your planning companion, grounded in the Toolkit.
-        <br />
-        For the first idea, the next step, and everything in between.
+        Ask Sahayak. Start with the guides. Make it your own.
       </p>
       {!configured && (
         <div className="notice">
@@ -2036,7 +2068,9 @@ function Sahayak({
       {answer && (
         <article className="panel answer">
           <Badge tone="green">Sahayak · Advisory guidance</Badge>
-          <p className="preserve">{answer}</p>
+          <div className="markdown-answer">
+            <ReactMarkdown skipHtml>{answer}</ReactMarkdown>
+          </div>
           <h4>Retrieved sources used</h4>
           {citations.length ? (
             citations.map((c) => (

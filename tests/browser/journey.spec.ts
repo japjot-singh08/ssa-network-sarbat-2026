@@ -8,7 +8,7 @@ test("student → officer → human reviewer → leaderboard → feed → Toolki
   await page.goto("/");
   await expect(
     page.getByRole("heading", {
-      name: "A shared purpose. A stronger community.",
+      name: "Your campus. Our community.",
     }),
   ).toBeVisible();
   await page.screenshot({
@@ -38,6 +38,7 @@ test("student → officer → human reviewer → leaderboard → feed → Toolki
     },
   });
   expect(forbidden.status()).toBe(400);
+  await page.getByRole("button", { name: "My account", exact: true }).click();
   await page.getByRole("button", { name: "Switch identity" }).click();
   await page
     .getByRole("dialog")
@@ -96,6 +97,7 @@ test("student → officer → human reviewer → leaderboard → feed → Toolki
       (p: { submissionId: string }) => p.submissionId === submission.id,
     ),
   ).toHaveLength(0);
+  await page.getByRole("button", { name: "My account", exact: true }).click();
   await page.getByRole("button", { name: "Switch identity" }).click();
   await page
     .getByRole("combobox", { name: "Role", exact: true })
@@ -113,6 +115,7 @@ test("student → officer → human reviewer → leaderboard → feed → Toolki
   await page
     .getByRole("button", { name: "Enter demonstration", exact: false })
     .click();
+  await page.getByRole("button", { name: "My account", exact: true }).click();
   await page.getByRole("button", { name: "USM review desk" }).click();
   await expect(
     page.getByRole("heading", { name: "The USM review desk." }),
@@ -172,6 +175,7 @@ test("student → officer → human reviewer → leaderboard → feed → Toolki
   await expect(page.locator(".leader-row").nth(1)).toContainText(
     "University of Washington SSA",
   );
+  await page.getByRole("button", { name: "My account", exact: true }).click();
   await page.getByRole("button", { name: "Switch identity" }).click();
   await page
     .getByRole("combobox", { name: "Role", exact: true })
@@ -216,7 +220,7 @@ test("responsive mobile navigation and layout", async ({ page }) => {
   await page.goto("/");
   await expect(
     page.getByRole("heading", {
-      name: "A shared purpose. A stronger community.",
+      name: "Your campus. Our community.",
     }),
   ).toBeVisible();
   expect(

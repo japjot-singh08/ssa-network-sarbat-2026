@@ -240,3 +240,79 @@ test("Arena region navigation and demo participation labels", async ({
     "Limited to West chapters.",
   );
 });
+
+test("account tools move out of public navigation and close on Escape on mobile", async ({
+  page,
+}) => {
+  await page.request.post("/api/session", {
+    headers,
+    data: { role: "ADMIN", passcode: "synthetic-e2e-reviewer-passcode" },
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/?view=arena");
+  await expect(
+    page
+      .locator("aside")
+      .getByRole("button", { name: "My dashboard", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page
+      .locator("aside")
+      .getByRole("button", { name: "USM review desk", exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "My account", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "USM review desk", exact: true }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#account-panel")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "My account", exact: true }),
+  ).toBeFocused();
+  await page.getByRole("button", { name: "My account", exact: true }).click();
+  await page
+    .getByRole("button", { name: "USM review desk", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "The USM review desk." }),
+  ).toBeVisible();
+  await expect(page.locator("#account-panel")).toHaveCount(0);
+});
+
+test("Sahayak formats Markdown safely", async ({ page }) => {
+  await page.request.post("/api/session", {
+    headers,
+    data: { role: "STUDENT" },
+  });
+  await page.route("**/api/state", async (route) => {
+    const response = await route.fetch();
+    const s = await response.json();
+    s.aiConfigured = true;
+    await route.fulfill({ response, json: s });
+  });
+  await page.route("**/api/ai", (route) =>
+    route.fulfill({
+      json: {
+        answer:
+          "## Your event plan\n\n**Choose a host.**\n\n1. Confirm the date\n2. Assign volunteers\n\n<script>alert(1)</script>",
+        citations: [],
+      },
+    }),
+  );
+  await page.goto("/?view=sahayak");
+  await page.getByRole("textbox").fill("Help us plan an event");
+  await page.getByRole("button", { name: "Ask Sahayak", exact: true }).click();
+  await expect(page.locator(".markdown-answer h2")).toHaveText(
+    "Your event plan",
+  );
+  await expect(page.locator(".markdown-answer strong")).toHaveText(
+    "Choose a host.",
+  );
+  await expect(page.locator(".markdown-answer li")).toHaveCount(2);
+  await expect(page.locator(".markdown-answer script")).toHaveCount(0);
+});
