@@ -3189,3 +3189,171 @@ h1 {
     flex-direction: column;
   }
 }
+
+/* Public website navigation: community first, account tools to the right. */
+.shell {
+  display: block;
+}
+.sidebar {
+  position: relative;
+  inset: auto;
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: 0 40px;
+  background: #284b63;
+  color: #fff;
+  border: 0;
+  z-index: 30;
+}
+.sidebar .brand {
+  height: 76px;
+  width: fit-content;
+  margin: 0;
+  color: #fff;
+}
+.sidebar .brand small {
+  color: #c5d4db;
+}
+.sidebar .logo-mark {
+  background: #e6bd65;
+  color: #203d50;
+}
+.sidebar .nav-label,
+.sidebar .network-colophon {
+  display: none;
+}
+.sidebar nav {
+  display: flex;
+  gap: 6px;
+  padding: 0 0 12px;
+  overflow-x: auto;
+}
+.sidebar .nav-item {
+  width: auto;
+  white-space: nowrap;
+  padding: 11px 14px;
+  color: #dce5e7;
+  font-size: 13px;
+  border-radius: 22px;
+}
+.sidebar .nav-item.active,
+.sidebar .nav-item:hover {
+  background: #e8c775;
+  color: #203d50;
+}
+.sidebar .ai-mini {
+  margin-left: 6px;
+}
+.workspace {
+  margin-left: 0;
+  width: 100%;
+}
+.topbar {
+  position: absolute;
+  top: 0;
+  right: 28px;
+  left: auto;
+  width: auto;
+  height: 76px;
+  background: transparent;
+  border: 0;
+  z-index: 40;
+  padding: 0;
+}
+.topbar .breadcrumb,
+.topbar .top-note,
+.topbar .mobile-only,
+.topbar .mobile-brand {
+  display: none;
+}
+.top-profile {
+  color: #fff;
+  border-color: #ffffff55;
+}
+.account-monogram {
+  background: #e8c775;
+  color: #203d50;
+}
+.account-panel {
+  color: #202c3a;
+  top: 64px;
+}
+.content {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 42px 40px;
+}
+.claim-chapter {
+  background: #f1eee4;
+  border-left: 4px solid #c4a44e;
+  padding: 24px;
+  margin: 24px 0;
+}
+.claim-chapter form {
+  max-width: 700px;
+}
+.check-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 18px 0;
+  font-size: 14px;
+}
+.check-line input {
+  width: auto;
+  margin-top: 4px;
+}
+@media (max-width: 760px) {
+  .sidebar,
+  .sidebar.mobile-open {
+    position: relative;
+    display: block;
+    width: 100%;
+    padding: 0 16px;
+    height: auto;
+    transform: none;
+    box-shadow: none;
+  }
+  .sidebar .brand {
+    height: 68px;
+    font-size: 16px;
+  }
+  .sidebar nav {
+    gap: 2px;
+  }
+  .sidebar .nav-item {
+    font-size: 12px;
+    padding: 10px 12px;
+  }
+  .sidebar .nav-item svg {
+    display: none;
+  }
+  .topbar {
+    position: absolute;
+    top: 0;
+    right: 16px;
+    height: 68px;
+    width: auto;
+  }
+  .top-profile {
+    font-size: 12px;
+    padding: 8px;
+  }
+  .top-profile .account-monogram {
+    display: none;
+  }
+  .content {
+    padding: 28px 18px;
+  }
+  .claim-chapter {
+    padding: 18px;
+  }
+}
+.sidebar nav {
+  flex-direction: row;
+  align-items: center;
+}
+.sidebar .nav-item {
+  flex: 0 0 auto;
+}

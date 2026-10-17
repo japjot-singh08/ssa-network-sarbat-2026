@@ -74,6 +74,13 @@ export const portalActionSchema = z.discriminatedUnion("action", [
     note: z.string().trim().max(2000),
   }),
   z.object({
+    action: z.literal("chapterClaim"),
+    chapterId: id,
+    position: text(150),
+    evidence: text(4000).min(20),
+    confirmed: z.literal(true),
+  }),
+  z.object({
     action: z.literal("chapterPropose"),
     proposalId: id.optional(),
     details: answers,
@@ -88,6 +95,7 @@ export const portalActionSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("chapterProfile"),
     chapterId: id,
+    size: z.number().int().min(1).max(1000).optional(),
     bio: text(2000),
     location: text(200),
     state: text(100),
@@ -184,10 +192,56 @@ export function applyPortal(s: State, a: Actor, input: PortalAction) {
     });
     return "Profile updated.";
   }
+  if (input.action === "chapterClaim") {
+    const c = s.chapters.find((c) => c.id === input.chapterId);
+    need(
+      c && c.networkStatus === "UNCLAIMED",
+      "This chapter is already claimed or is not available for claims.",
+    );
+    const profile = ensureProfile(s, a);
+    const existing = s.chapterProposals.find(
+      (p) =>
+        p.userId === a.id &&
+        p.details.claimChapterId === c.id &&
+        ["PENDING", "CHANGES_REQUESTED", "APPROVED"].includes(p.status),
+    );
+    need(
+      existing?.status !== "PENDING",
+      "Your claim is already pending USM review.",
+    );
+    const details = {
+      kind: "Executive-board claim",
+      claimChapterId: c.id,
+      proposedName: c.name,
+      university: c.university,
+      position: input.position,
+      evidence: input.evidence,
+      applicantEmail: profile.email || a.email || "Demo account",
+      attestation:
+        "Applicant confirms they currently serve on this chapter’s executive board.",
+    };
+    if (existing)
+      Object.assign(existing, { details, status: "PENDING", updatedAt: now });
+    else
+      s.chapterProposals.push({
+        id: uid(),
+        userId: a.id,
+        universityKey: "claim:" + c.id + ":" + a.id + ":" + uid(),
+        status: "PENDING",
+        details,
+        chapterId: c.id,
+        reviewNote: "",
+        reviewerId: null,
+        createdAt: now,
+        updatedAt: now,
+      });
+    audit("CHAPTER_CLAIM_SUBMITTED", c.id, c.id);
+    return "Claim sent to USM. Officer access stays locked until human approval. Track it in My applications.";
+  }
   if (input.action === "membershipApply") {
     const c = s.chapters.find((c) => c.id === input.chapterId);
     need(
-      c && c.applicationsOpen !== false,
+      c && c.networkStatus !== "UNCLAIMED" && c.applicationsOpen !== false,
       "This chapter is not accepting applications.",
     );
     need(
@@ -345,6 +399,51 @@ export function applyPortal(s: State, a: Actor, input: PortalAction) {
     if (p.status === "APPROVED" && input.decision === "APPROVED")
       return "Already approved; no duplicate chapter or officer membership created.";
     need(p.status === "PENDING", "Only pending proposals can be reviewed.");
+    if (p.details.claimChapterId) {
+      const c = s.chapters.find((c) => c.id === p.details.claimChapterId);
+      need(c, "Chapter no longer exists.");
+      if (input.decision === "APPROVED") {
+        need(
+          c.networkStatus === "UNCLAIMED" &&
+            !s.memberships.some(
+              (m) =>
+                m.chapterId === c.id &&
+                m.role === "OFFICER" &&
+                m.status === "ACTIVE",
+            ),
+          "Another claim has already been approved for this chapter.",
+        );
+        const profile = s.profiles.find((x) => x.id === p.userId);
+        need(profile, "Applicant profile missing.");
+        c.networkStatus = "USM_AFFILIATED";
+        c.applicationsOpen = true;
+        if (profile.role !== "ADMIN") profile.role = "OFFICER";
+        if (!profile.chapterId) profile.chapterId = c.id;
+        const membership = s.memberships.find(
+          (m) => m.userId === p.userId && m.chapterId === c.id,
+        );
+        if (membership) membership.role = "OFFICER";
+        else
+          s.memberships.push({
+            id: uid(),
+            userId: p.userId,
+            chapterId: c.id,
+            role: "OFFICER",
+            status: "ACTIVE",
+            createdAt: now,
+          });
+      }
+      Object.assign(p, {
+        status: input.decision,
+        reviewNote: input.note,
+        reviewerId: a.id,
+        updatedAt: now,
+      });
+      audit("CHAPTER_CLAIM_" + input.decision, p.id, c.id);
+      return input.decision === "APPROVED"
+        ? "Chapter claim approved. Officer access granted to this chapter only."
+        : "Chapter claim review saved.";
+    }
     if (input.decision === "APPROVED") {
       need(
         !s.chapters.some(
@@ -415,6 +514,7 @@ export function applyPortal(s: State, a: Actor, input: PortalAction) {
     );
     const c = s.chapters.find((c) => c.id === input.chapterId)!;
     Object.assign(c, {
+      ...(input.size !== undefined ? { size: input.size } : {}),
       bio: input.bio,
       location: input.location,
       state: input.state,
@@ -483,7 +583,9 @@ export function portalVisible(s: State, a: Actor) {
       a.role === "ADMIN"
         ? {
             students: s.profiles.length,
-            chapters: s.chapters.filter((c) => c.isSample === false).length,
+            chapters: s.chapters.filter(
+              (c) => c.isSample === false && c.networkStatus !== "UNCLAIMED",
+            ).length,
             pendingChapters: s.chapterProposals.filter(
               (p) => p.status === "PENDING",
             ).length,

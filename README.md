@@ -141,3 +141,19 @@ See `DEMO.md` for a timed recording script and preflight. The team records and e
 ## License
 
 MIT. See `LICENSE`.
+
+### Public USM directory and executive-board claims
+
+`lib/usm-directory.json` contains the 82 public chapter names, institutions, campus locations and coordinates published at https://www.unitedsikhmovement.org/ssas (retrieved October 16, 2026). It contains no student roster, private email, or board member information. Source URLs are retained for attribution. Ownership status on this app is independent of USM's existing website.
+
+To import into the configured Supabase project, run:
+
+```sh
+node --env-file=.env.local --import tsx scripts/import-usm-directory.ts
+```
+
+The importer first saves a private backup under ignored `work/`, preserves accounts and approved officer-owned chapters, and labels imported listings `UNCLAIMED`. Re-running it updates unclaimed source listings without granting account access. Local demo seed data remains fictional; the hosted directory import is deliberate.
+
+A verified signed-in user opens a chapter profile and submits their executive-board position, verification evidence and attestation. Claims appear under **My account → My applications**. USM admins review them under **My account → USM administration**, verify evidence through a trusted chapter contact, and approve, decline, or request changes. Evidence stays private to the applicant and administrators. Approval updates the existing chapter and grants only chapter-scoped officer membership in one transaction. Pending and duplicate claims do not grant access. Membership applications open after ownership approval. A successful claim here does not modify USM's other website or confirm university recognition.
+
+Imported membership counts are stored as `0` meaning **unknown**, not a reported count. Migration `005_unclaimed_directory` supports this. Officers can set the current count under My SSA → Chapter Profile. Arena approval cannot award size-normalized points while the count is unknown.

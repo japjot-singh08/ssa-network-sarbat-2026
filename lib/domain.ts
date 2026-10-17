@@ -241,6 +241,10 @@ export function apply(state: State, actor: Actor, action: Action) {
     const p = state.participations.find((p) => p.id === s.participationId)!;
     const c = state.challenges.find((c) => c.id === p.challengeId)!;
     const chapter = state.chapters.find((c) => c.id === p.chapterId)!;
+    need(
+      action.decision !== "APPROVED" || chapter.size > 0,
+      "Chapter size is unknown. Ask the officer to update Chapter Profile before awarding normalized points.",
+    );
     s.status = action.decision;
     s.feedback = action.feedback;
     s.reviewerId = actor.id;

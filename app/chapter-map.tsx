@@ -105,7 +105,7 @@ export function ChapterMap({
             ? ` · ${chapters.length - located.length} awaiting location`
             : ""}
         </span>
-        <span>Campus locations · sample chapters are fictional</span>
+        <span>Campus locations · ownership requires USM approval</span>
       </div>
       <div
         ref={host}

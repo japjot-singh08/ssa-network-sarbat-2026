@@ -282,3 +282,60 @@ test("open email policy accepts personal addresses without weakening restricted 
     true,
   );
 });
+
+test("chapter claims require human administration, private evidence, and grant scoped officer access exactly once", () => {
+  const s = seed();
+  const c = s.chapters[0];
+  c.networkStatus = "UNCLAIMED";
+  c.applicationsOpen = false;
+  c.isSample = false;
+  const other = { ...student, id: "other", email: "other@example.edu" };
+  const claim = {
+    action: "chapterClaim" as const,
+    chapterId: c.id,
+    position: "President",
+    evidence: "Public board roster: https://example.edu/ssa/board",
+    confirmed: true as const,
+  };
+  assert.throws(
+    () => applyPortal(s, { ...student, verified: false }, claim),
+    /Verify/,
+  );
+  applyPortal(s, student, claim);
+  assert.equal(s.profiles.find((p) => p.id === student.id)?.role, "STUDENT");
+  assert.equal(s.memberships.filter((m) => m.userId === student.id).length, 0);
+  assert.throws(() => applyPortal(s, student, claim), /already pending/);
+  applyPortal(s, other, claim);
+  assert.equal(
+    portalVisible(s, other).chapterProposals.some(
+      (p) => p.userId === student.id,
+    ),
+    false,
+  );
+  const p = s.chapterProposals.find((p) => p.userId === student.id)!;
+  const review = {
+    action: "proposalReview" as const,
+    proposalId: p.id,
+    decision: "APPROVED" as const,
+    note: "Verified with existing chapter contact.",
+  };
+  assert.throws(() => applyPortal(s, student, review), /administrator/);
+  const count = s.chapters.length;
+  applyPortal(s, admin, review);
+  applyPortal(s, admin, review);
+  assert.equal(s.chapters.length, count);
+  assert.equal(
+    s.memberships.filter(
+      (m) =>
+        m.userId === student.id && m.chapterId === c.id && m.role === "OFFICER",
+    ).length,
+    1,
+  );
+  assert.equal(c.networkStatus, "USM_AFFILIATED");
+  const competing = s.chapterProposals.find((p) => p.userId === other.id)!;
+  assert.throws(
+    () => applyPortal(s, admin, { ...review, proposalId: competing.id }),
+    /already been approved/,
+  );
+  assert.equal(s.profiles.find((p) => p.id === other.id)?.role, "STUDENT");
+});

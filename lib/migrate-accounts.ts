@@ -10,6 +10,7 @@ export async function migrateAccounts(sql: ReturnType<typeof postgres>) {
     "002_accounts_memberships",
     "003_proposal_draft_privacy",
     "004_arena_participation",
+    "005_unclaimed_directory",
   ]) {
     const done =
       await sql`select id from public.ssa_schema_migrations where id=${id}`;

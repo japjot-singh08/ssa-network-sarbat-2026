@@ -4,7 +4,7 @@
 begin;
 create table if not exists chapters (
  id text primary key, name text not null, university text not null, region text not null,
- location text not null, size integer not null check(size between 1 and 1000), skills jsonb not null,
+ location text not null, size integer not null check(size between 0 and 1000), skills jsonb not null,
  availability text, commitments jsonb, experience jsonb not null, lat double precision not null,
  lng double precision not null, bio text not null
 );

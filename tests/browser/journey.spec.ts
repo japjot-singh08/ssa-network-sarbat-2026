@@ -232,7 +232,6 @@ test("responsive mobile navigation and layout", async ({ page }) => {
     path: "outputs/ssa-network-mobile.png",
     fullPage: true,
   });
-  await page.getByRole("button", { name: "Toggle navigation" }).click();
   await page.getByRole("button", { name: "Arena", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Find a cause. Make your mark." }),

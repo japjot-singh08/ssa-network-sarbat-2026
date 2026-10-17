@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
 import { ChapterMap } from "./chapter-map";
+import publicDirectory from "@/lib/usm-directory.json";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
@@ -211,11 +212,13 @@ export function Portals({
     [region, setRegion] = useState("All regions"),
     [province, setProvince] = useState("All states"),
     [university, setUniversity] = useState("All universities"),
-    [selected, setSelected] = useState<Chapter | null>(null),
+    [selectedSnapshot, setSelected] = useState<Chapter | null>(null),
     [joining, setJoining] = useState<Chapter | null>(null),
     [editProposal, setEditProposal] = useState<ChapterProposal | null>(null),
     [chapterTab, setChapterTab] = useState("Overview"),
     [selectedChapter, setSelectedChapter] = useState("");
+  const selected =
+    state.chapters.find((c) => c.id === selectedSnapshot?.id) || null;
   const profileRef = useRef<HTMLElement>(null);
   const applicationRef = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -254,7 +257,10 @@ export function Portals({
       ),
     ),
   ];
-  const filteredChapters = state.chapters.filter(
+  const directoryChapters = state.chapters.some((c) => c.isSample === false)
+    ? state.chapters.filter((c) => c.isSample === false)
+    : state.chapters;
+  const filteredChapters = directoryChapters.filter(
     (c) =>
       (region === "All regions" || c.region === region) &&
       (university === "All universities" || c.university === university) &&
@@ -442,7 +448,7 @@ export function Portals({
         <>
           <Intro
             title="Find your SSA."
-            description="Your community could be closer than you think. Search your school, open a chapter, and apply to join."
+            description="Your community could be closer than you think. Search your school, meet your chapter, or claim its page if you serve on the executive board."
           />
           <div className="directory-steps" aria-label="How to join a chapter">
             <p>
@@ -451,11 +457,15 @@ export function Portals({
             </p>
             <p>
               <b>02 / Meet your chapter</b>
-              <span>Open its profile and apply to join.</span>
+              <span>
+                Join a claimed chapter, or request executive-board access.
+              </span>
             </p>
             <p>
               <b>03 / Get involved</b>
-              <span>Track your application in My account.</span>
+              <span>
+                Track membership requests and USM claim reviews in My account.
+              </span>
             </p>
           </div>
           <div className="filters">
@@ -561,14 +571,20 @@ export function Portals({
                   <span className="badge">
                     {c.isSample !== false
                       ? "Fictional sample"
-                      : "USM affiliated"}
+                      : c.networkStatus === "UNCLAIMED"
+                        ? "Unclaimed"
+                        : "Claimed"}
                   </span>
                 </div>
                 <h3>{c.name}</h3>
                 <p>
                   {c.university} · {c.location}
                 </p>
-                <p>{c.bio}</p>
+                <p>
+                  {c.networkStatus === "UNCLAIMED"
+                    ? "Executive board? Claim this page with USM approval."
+                    : c.bio}
+                </p>
                 <span className="text-button">
                   View chapter <ArrowUpRight size={16} />
                 </span>
@@ -606,7 +622,34 @@ export function Portals({
                 <MapPin size={13} className="inline-icon" />
                 {selected.location} · {selected.region}
               </p>
-              <p>{selected.bio}</p>
+              <p>
+                {selected.networkStatus === "UNCLAIMED"
+                  ? "This chapter appears in USM’s public directory. No executive-board owner has been approved on SSA Network yet."
+                  : selected.bio}
+              </p>
+              {selected.networkStatus === "UNCLAIMED" && (
+                <ClaimChapter
+                  chapter={selected}
+                  state={state}
+                  act={act}
+                  onSignIn={onSignIn}
+                />
+              )}
+              {publicDirectory.find((c) => c.name === selected.name) && (
+                <p>
+                  <a
+                    className="text-button"
+                    href={
+                      publicDirectory.find((c) => c.name === selected.name)!
+                        .sourceUrl
+                    }
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    View source listing on USM ↗
+                  </a>
+                </p>
+              )}
               {selected.publicContact && (
                 <p>
                   Approved public contact:{" "}
@@ -618,7 +661,9 @@ export function Portals({
               <p className="small muted">
                 {selected.isSample !== false
                   ? "Fictional demonstration chapter."
-                  : `Network status: USM affiliated. University recognition: ${selected.universityRecognition === "CONFIRMED" ? "confirmed" : "not confirmed"}. USM affiliation does not establish university recognition.`}
+                  : selected.networkStatus === "UNCLAIMED"
+                    ? "Unclaimed on SSA Network. Directory listing does not grant account access or confirm current university recognition."
+                    : `Network status: USM affiliated. University recognition: ${selected.universityRecognition === "CONFIRMED" ? "confirmed" : "not confirmed"}. USM affiliation does not establish university recognition.`}
               </p>
               <p>
                 {state.points
@@ -661,7 +706,9 @@ export function Portals({
                         )
                       ? "Application pending"
                       : selected.applicationsOpen === false
-                        ? "Applications closed"
+                        ? selected.networkStatus === "UNCLAIMED"
+                          ? "Joining opens after a claim is approved"
+                          : "Applications closed"
                         : "Apply to Join"}
                 </button>
               </div>
@@ -731,7 +778,9 @@ export function Portals({
             )}
           </div>
           {applicationForm}
-          <h2 className="portal-section">New chapter proposals</h2>
+          <h2 className="portal-section">
+            Chapter claims and new chapter proposals
+          </h2>
           <div className="stack portal-section">
             {state.chapterProposals
               .filter((p) => p.userId === actor.id)
@@ -744,6 +793,11 @@ export function Portals({
                   />
                   <h3>{p.details.proposedName || "Untitled draft"}</h3>
                   <p>{p.details.university}</p>
+                  <p>
+                    {p.details.claimChapterId
+                      ? "Executive-board claim"
+                      : "New chapter proposal"}
+                  </p>
                   {p.reviewNote && (
                     <div className="notice">USM feedback: {p.reviewNote}</div>
                   )}
@@ -751,11 +805,20 @@ export function Portals({
                     <button
                       className="button secondary"
                       onClick={() => {
-                        setEditProposal(p);
-                        go("start");
+                        if (p.details.claimChapterId) {
+                          setSelected(
+                            state.chapters.find(
+                              (c) => c.id === p.details.claimChapterId,
+                            ) || null,
+                          );
+                          go("directory");
+                        } else {
+                          setEditProposal(p);
+                          go("start");
+                        }
                       }}
                     >
-                      Edit proposal
+                      Edit application
                     </button>
                   )}
                   {p.status === "APPROVED" && (
@@ -1030,6 +1093,7 @@ export function Portals({
                       await act({
                         action: "chapterProfile",
                         chapterId: active.id,
+                        size: Number(f.get("size")),
                         bio: f.get("bio"),
                         location: f.get("location"),
                         state: f.get("state"),
@@ -1040,6 +1104,17 @@ export function Portals({
                       });
                     }}
                   >
+                    <Field label="Chapter membership count">
+                      <input
+                        name="size"
+                        type="number"
+                        min={1}
+                        max={1000}
+                        required
+                        defaultValue={active.size || ""}
+                        placeholder="Enter your current chapter size"
+                      />
+                    </Field>
                     {[
                       ["bio", "Public description", active.bio],
                       ["location", "Location", active.location],
@@ -1196,7 +1271,7 @@ export function Portals({
                   state.networkStats?.students || 0,
                 ],
                 [
-                  "Pending chapter proposals",
+                  "Pending proposals and claims",
                   state.networkStats?.pendingChapters || 0,
                 ],
                 [
@@ -1244,7 +1319,7 @@ export function Portals({
               ) : (
                 <div className="empty">
                   <ShieldCheck />
-                  <p>No submitted chapter proposals yet.</p>
+                  <p>No submitted chapter claims or proposals yet.</p>
                 </div>
               )}
             </div>
@@ -1455,9 +1530,9 @@ function ReviewProposal({
       {p.status === "PENDING" ? (
         <>
           <div className="notice">
-            Approval creates a USM-affiliated chapter and grants its applicant
-            initial officer access. This does not establish university
-            recognition.
+            {p.details.claimChapterId
+              ? "Verify executive-board evidence through a trusted chapter or USM contact before approving. Approval grants officer access to this existing chapter; it does not create another chapter."
+              : "Approval creates a USM-affiliated chapter and grants its applicant initial officer access. This does not establish university recognition."}
           </div>
           <DecisionForm
             label="USM chapter decision"
@@ -1576,5 +1651,99 @@ function PasswordForm() {
       </button>
       {message && <p role="status">{message}</p>}
     </form>
+  );
+}
+
+function ClaimChapter({
+  chapter,
+  state,
+  act,
+  onSignIn,
+}: {
+  chapter: Chapter;
+  state: PublicState;
+  act: Act;
+  onSignIn: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const claim = state.chapterProposals.find(
+    (p) =>
+      p.userId === state.actor.id &&
+      p.details.claimChapterId === chapter.id &&
+      ["PENDING", "CHANGES_REQUESTED", "APPROVED"].includes(p.status),
+  );
+  return (
+    <section className="claim-chapter">
+      <span className="badge gold">Unclaimed on SSA Network</span>
+      <h3>On this chapter’s executive board?</h3>
+      <p>
+        Claim the page to manage your chapter, review membership applications,
+        and participate in Arena. USM checks every claim before granting officer
+        access.
+      </p>
+      {claim?.status === "PENDING" ? (
+        <div className="notice">
+          Your claim is pending USM review. Follow its status in My account → My
+          applications.
+        </div>
+      ) : state.actor.id === "guest" ? (
+        <button className="button" onClick={onSignIn}>
+          Sign in to claim this chapter
+        </button>
+      ) : (
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const f = new FormData(e.currentTarget);
+            setBusy(true);
+            try {
+              await act({
+                action: "chapterClaim",
+                chapterId: chapter.id,
+                position: String(f.get("position")),
+                evidence: String(f.get("evidence")),
+                confirmed: f.get("confirmed") === "on",
+              });
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          {claim?.reviewNote && (
+            <div className="notice">USM feedback: {claim.reviewNote}</div>
+          )}
+          <Field label="Your executive-board position">
+            <input
+              name="position"
+              required
+              maxLength={150}
+              placeholder="For example, president or seva director"
+              defaultValue={claim?.details.position || ""}
+            />
+          </Field>
+          <Field label="Evidence of your executive-board role">
+            <textarea
+              name="evidence"
+              required
+              minLength={20}
+              maxLength={4000}
+              placeholder="Link to a public board roster or chapter announcement, or explain how USM can verify your position. Do not include passwords or private student records."
+              defaultValue={claim?.details.evidence || ""}
+            />
+          </Field>
+          <label className="check-line">
+            <input type="checkbox" name="confirmed" required /> I currently
+            serve on this chapter’s executive board and understand USM must
+            verify my claim.
+          </label>
+          <p className="small muted">
+            Your evidence is private to you and USM reviewers.
+          </p>
+          <button className="button" disabled={busy}>
+            {busy ? "Submitting…" : "Submit chapter claim"}
+          </button>
+        </form>
+      )}
+    </section>
   );
 }

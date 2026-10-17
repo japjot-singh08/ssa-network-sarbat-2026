@@ -449,7 +449,11 @@ export default function Network() {
         )}
       </main>
     );
-  const ranking = state.chapters
+  const publicChapters = state.chapters.some((c) => c.isSample === false)
+    ? state.chapters.filter((c) => c.isSample === false)
+    : state.chapters;
+  const ranking = publicChapters
+    .filter((c) => c.networkStatus !== "UNCLAIMED")
     .map((c) => ({
       ...c,
       points: state.points
@@ -634,10 +638,11 @@ export default function Network() {
         {(state.demo || state.sampleData) && (
           <div className="demo-banner">
             <span>
-              {state.demo ? "DEMONSTRATION" : "SAMPLE CONTENT · REAL ACCOUNTS"}
+              {state.demo ? "DEMONSTRATION" : "PILOT · REAL ACCOUNTS"}
             </span>{" "}
-            Fictional chapters, opportunities, and resources. Grant records are
-            not payments.
+            {state.chapters.some((c) => c.networkStatus === "UNCLAIMED")
+              ? "Public USM directory · sample challenges and resources. Claims require USM approval. Grant records are not payments."
+              : "Fictional chapters, opportunities, and resources. Grant records are not payments."}
           </div>
         )}
         <main className="content">
@@ -720,7 +725,7 @@ export default function Network() {
                     <div>
                       <b>Find your people</b>
                       <small>
-                        {state.chapters.length} campus chapters to explore
+                        {publicChapters.length} campus chapters to explore
                       </small>
                     </div>
                     <ArrowUpRight size={20} />
@@ -751,8 +756,8 @@ export default function Network() {
                     <GraduationCap />
                   </span>
                   <div>
-                    <b>{state.chapters.length}</b>
-                    <span>Connected chapters</span>
+                    <b>{publicChapters.length}</b>
+                    <span>Chapters to discover</span>
                   </div>
                 </div>
                 <div>
@@ -1171,6 +1176,18 @@ export default function Network() {
                   <span>COMPLETED</span>
                   <span>POINTS</span>
                 </div>
+                {!ranking.length && (
+                  <div className="empty">
+                    <h3>Recognition starts with a verified chapter.</h3>
+                    <p>
+                      Approved chapter claims unlock participation. Points
+                      follow human approval of completed challenges.
+                    </p>
+                    <button className="button" onClick={() => go("directory")}>
+                      Find or claim your SSA
+                    </button>
+                  </div>
+                )}
                 {ranking.map((c, i) => (
                   <button
                     className="leader-row"
@@ -1572,7 +1589,7 @@ export default function Network() {
               onSignedIn={async () => {
                 await refresh();
                 setIdentity(false);
-                go("dashboard");
+                go(view === "directory" ? "directory" : "dashboard");
               }}
             />
           )}
@@ -2525,7 +2542,8 @@ function SubmissionReview({
       </div>
       <h2>{c.title}</h2>
       <p className="muted">
-        {chapter.name} · {chapter.size} chapter members
+        {chapter.name} · {chapter.size > 0 ? chapter.size : "Unknown number of"}{" "}
+        chapter members
       </p>
       <div className="review-criteria">
         <h4>Completion criteria</h4>
@@ -2582,7 +2600,10 @@ function SubmissionReview({
           <div className="score-preview">
             <span>Calculated demo score</span>
             <b>
-              {score(c.points, hours, chapter.size)} <small>points</small>
+              {chapter.size > 0
+                ? score(c.points, hours, chapter.size)
+                : "Chapter size required"}{" "}
+              <small>points</small>
             </b>
             <span>{c.points} base · capped effort · size factor</span>
           </div>
