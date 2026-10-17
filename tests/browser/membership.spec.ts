@@ -6,7 +6,7 @@ test("student application → chapter-scoped human approval → private roster a
 }) => {
   await page.goto("/?view=directory");
   await expect(
-    page.getByRole("heading", { name: "Find your sangat." }),
+    page.getByRole("heading", { name: "Find your SSA." }),
   ).toBeVisible();
   await page.request.post("/api/session", {
     headers,

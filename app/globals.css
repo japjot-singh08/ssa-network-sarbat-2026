@@ -3083,3 +3083,109 @@ h1 {
   font-size: 6.8px;
   letter-spacing: 1.2px;
 }
+
+/* Chapter discovery: a guided, geographic entrance to the network. */
+.directory-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  margin: 0 0 28px;
+  gap: 24px;
+}
+.directory-steps p {
+  display: grid;
+  gap: 8px;
+  padding: 18px 0;
+  margin: 0;
+}
+.directory-steps b {
+  color: #263e51;
+  font-size: 14px;
+}
+.directory-steps span {
+  font-size: 13px;
+  color: #65706e;
+}
+.chapter-map-panel {
+  border: 1px solid #d7d8cf;
+  margin: 0 0 30px;
+  background: #fff;
+  overflow: hidden;
+}
+.map-caption {
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  color: #52616a;
+}
+.chapter-map {
+  height: 390px;
+  width: 100%;
+  background: #e8ece6;
+  z-index: 0;
+}
+.map-help {
+  padding: 12px 18px;
+  margin: 0;
+  font-size: 12px;
+  color: #52616a;
+}
+.chapter-pin {
+  background: #df623b;
+  border: 3px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 0 2px 8px #263e5140;
+  color: white;
+  font:
+    bold 17px Georgia,
+    serif;
+  display: grid;
+  place-items: center;
+}
+.chapter-pin span {
+  display: block;
+}
+.chapter-pin:focus {
+  outline: 3px solid #263e51;
+  outline-offset: 3px;
+}
+.directory-results {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.directory-results h2 {
+  margin: 0;
+  font-size: 26px;
+}
+.directory-results a {
+  font-size: 12px;
+  color: #52616a;
+  text-decoration: underline;
+}
+@media (max-width: 760px) {
+  .directory-steps {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .directory-steps p {
+    padding: 12px 0;
+  }
+  .directory-steps span {
+    font-size: 12px;
+  }
+  .chapter-map {
+    height: 300px;
+  }
+  .directory-results {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

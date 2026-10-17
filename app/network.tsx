@@ -315,7 +315,7 @@ export default function Network() {
       review: "USM review desk",
       chapter: "Chapter profile",
       dashboard: "My dashboard",
-      directory: "Explore Chapters",
+      directory: "Find your SSA",
       applications: "My applications",
       start: "Start a Chapter",
       myssa: "My SSA",
@@ -482,7 +482,7 @@ export default function Network() {
             onClick={() => go("directory")}
           >
             <Users size={18} />
-            Explore Chapters
+            Find your SSA
           </button>
           {nav.map(([id, label, Icon]) => (
             <button
@@ -680,12 +680,7 @@ export default function Network() {
                 </Badge>
               </div>
               <div className="portal-actions">
-                <button
-                  className="button"
-                  onClick={() =>
-                    go(state.actor.id === "guest" ? "directory" : "dashboard")
-                  }
-                >
+                <button className="button" onClick={() => go("directory")}>
                   Join an SSA <ArrowRight size={16} />
                 </button>
                 <button

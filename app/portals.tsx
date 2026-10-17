@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import { ChapterMap } from "./chapter-map";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
@@ -253,6 +254,16 @@ export function Portals({
       ),
     ),
   ];
+  const filteredChapters = state.chapters.filter(
+    (c) =>
+      (region === "All regions" || c.region === region) &&
+      (university === "All universities" || c.university === university) &&
+      (province === "All states" ||
+        (c.state || c.location.split(",").at(-1)?.trim()) === province) &&
+      `${c.name} ${c.university} ${c.location}`
+        .toLowerCase()
+        .includes(q.trim().toLowerCase()),
+  );
   if (actor.id === "guest" && view !== "directory")
     return (
       <div className="empty">
@@ -430,9 +441,23 @@ export function Portals({
       {view === "directory" && (
         <>
           <Intro
-            title="Find your sangat."
-            description="Discover SSA chapters across campuses. Public profiles share activities and achievements; private rosters stay private."
+            title="Find your SSA."
+            description="Your community could be closer than you think. Search your school, open a chapter, and apply to join."
           />
+          <div className="directory-steps" aria-label="How to join a chapter">
+            <p>
+              <b>01 / Find your school</b>
+              <span>Search below or explore the map.</span>
+            </p>
+            <p>
+              <b>02 / Meet your chapter</b>
+              <span>Open its profile and apply to join.</span>
+            </p>
+            <p>
+              <b>03 / Get involved</b>
+              <span>Track your application in My account.</span>
+            </p>
+          </div>
           <div className="filters">
             <label className="search">
               <Search size={18} />
@@ -477,56 +502,78 @@ export function Portals({
               ))}
             </select>
           </div>
+          <ChapterMap chapters={filteredChapters} onSelect={setSelected} />
+          <div className="directory-results">
+            <h2>
+              {filteredChapters.length}{" "}
+              {filteredChapters.length === 1 ? "chapter" : "chapters"} to
+              explore
+            </h2>
+            <a
+              href="https://www.unitedsikhmovement.org/ssas"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Official USM directory ↗
+            </a>
+          </div>
+          {!filteredChapters.length && (
+            <div className="empty">
+              <h3>No chapters match your search.</h3>
+              <p>
+                Try another school or clear the filters. If your school is
+                missing, you can propose a new SSA.
+              </p>
+              <button
+                className="button secondary"
+                onClick={() => {
+                  setQ("");
+                  setRegion("All regions");
+                  setProvince("All states");
+                  setUniversity("All universities");
+                }}
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
           <div className="resource-grid">
-            {state.chapters
-              .filter(
-                (c) =>
-                  (region === "All regions" || c.region === region) &&
-                  (university === "All universities" ||
-                    c.university === university) &&
-                  (province === "All states" ||
-                    (c.state || c.location.split(",").at(-1)?.trim()) ===
-                      province) &&
-                  `${c.name} ${c.university} ${c.location}`
-                    .toLowerCase()
-                    .includes(q.toLowerCase()),
-              )
-              .map((c) => (
-                <button
-                  className="panel resource-card"
-                  key={c.id}
-                  onClick={() => setSelected(c)}
-                >
-                  <div className="row between">
-                    <span className="resource-icon">
-                      {c.logoUrl ? (
-                        <Image
-                          src={c.logoUrl}
-                          alt={`${c.name} logo`}
-                          width={40}
-                          height={40}
-                          unoptimized
-                        />
-                      ) : (
-                        <GraduationCap />
-                      )}
-                    </span>
-                    <span className="badge">
-                      {c.isSample !== false
-                        ? "Fictional sample"
-                        : "USM affiliated"}
-                    </span>
-                  </div>
-                  <h3>{c.name}</h3>
-                  <p>
-                    {c.university} · {c.location}
-                  </p>
-                  <p>{c.bio}</p>
-                  <span className="text-button">
-                    View chapter <ArrowUpRight size={16} />
+            {filteredChapters.map((c) => (
+              <button
+                className="panel resource-card"
+                key={c.id}
+                onClick={() => setSelected(c)}
+              >
+                <div className="row between">
+                  <span className="resource-icon">
+                    {c.logoUrl ? (
+                      <Image
+                        src={c.logoUrl}
+                        alt={`${c.name} logo`}
+                        width={40}
+                        height={40}
+                        unoptimized
+                      />
+                    ) : (
+                      <GraduationCap />
+                    )}
                   </span>
-                </button>
-              ))}
+                  <span className="badge">
+                    {c.isSample !== false
+                      ? "Fictional sample"
+                      : "USM affiliated"}
+                  </span>
+                </div>
+                <h3>{c.name}</h3>
+                <p>
+                  {c.university} · {c.location}
+                </p>
+                <p>{c.bio}</p>
+                <span className="text-button">
+                  View chapter <ArrowUpRight size={16} />
+                </span>
+              </button>
+            ))}
           </div>
           <div className="bottom-callout">
             <Plus />
