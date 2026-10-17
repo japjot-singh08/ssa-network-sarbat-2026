@@ -249,3 +249,58 @@ test("atomic file persistence, concurrency, and rollback", async () => {
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test("shared, region-limited, and one-chapter challenges enforce participation without disappearing", () => {
+  const s = seed();
+  const shared = s.challenges.find((c) => c.id === "demo-national-food-drive")!;
+  apply(s, officer, { action: "accept", challengeId: shared.id });
+  const other: Actor = {
+    id: "other-officer",
+    role: "OFFICER",
+    chapterId: "uncc",
+  };
+  apply(s, other, { action: "accept", challengeId: shared.id });
+  assert.equal(
+    s.participations.filter((p) => p.challengeId === shared.id).length,
+    2,
+  );
+  const one = s.challenges.find((c) => c.id === "demo-west-website")!;
+  apply(s, officer, { action: "accept", challengeId: one.id });
+  apply(s, officer, { action: "accept", challengeId: one.id });
+  assert.equal(
+    s.participations.filter((p) => p.challengeId === one.id).length,
+    1,
+  );
+  assert.throws(
+    () =>
+      apply(
+        s,
+        { id: "stanford-officer", role: "OFFICER", chapterId: "stanford" },
+        { action: "accept", challengeId: one.id },
+      ),
+    /places are claimed/,
+  );
+  assert.equal(one.status, "OPEN");
+  assert.throws(
+    () =>
+      apply(s, other, { action: "accept", challengeId: "demo-west-cleanup" }),
+    /limited to chapters/,
+  );
+  const limited = s.challenges.find((c) => c.id === "demo-west-cleanup")!;
+  limited.maxChapters = 2;
+  apply(s, officer, { action: "accept", challengeId: limited.id });
+  apply(
+    s,
+    { id: "stanford-officer", role: "OFFICER", chapterId: "stanford" },
+    { action: "accept", challengeId: limited.id },
+  );
+  assert.throws(
+    () =>
+      apply(
+        s,
+        { id: "berkeley-officer", role: "OFFICER", chapterId: "berkeley" },
+        { action: "accept", challengeId: limited.id },
+      ),
+    /places are claimed/,
+  );
+});

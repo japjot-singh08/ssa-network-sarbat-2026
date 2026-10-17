@@ -52,6 +52,9 @@ export type Chapter = {
   bio: string;
 };
 export type Challenge = {
+  maxChapters?: number | null;
+  restrictRegion?: boolean;
+  sample?: boolean;
   id: string;
   title: string;
   description: string;

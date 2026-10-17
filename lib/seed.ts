@@ -1,4 +1,5 @@
 import type { State, Chapter, Challenge } from "./types";
+import { arenaDemoChallenges } from "./demo-challenges";
 const date = "2026-10-15T12:00:00.000Z";
 export function seed(): State {
   const chapters: Chapter[] = [
@@ -75,7 +76,7 @@ export function seed(): State {
   const challenges: Challenge[] = [
     {
       id: "warmth",
-      title: "A little warmth. A lasting impact.",
+      title: "Pack Winter Care Kits in Seattle",
       description:
         "Help our fictional neighborhood outreach team assemble and distribute winter care kits for neighbors experiencing housing insecurity. Bring your chapter together for a practical afternoon of seva.",
       organization: "Seattle Community Care · Demo",
@@ -103,7 +104,7 @@ export function seed(): State {
     },
     {
       id: "digital",
-      title: "Build a bridge to digital confidence",
+      title: "Teach Basic Computer Skills in Charlotte",
       description:
         "Run an introductory digital literacy workshop for community members: safe browsing, everyday tools, and confidence online.",
       organization: "Neighborhood Learning Collective · Demo",
@@ -130,7 +131,7 @@ export function seed(): State {
     },
     {
       id: "awareness",
-      title: "Make room for understanding",
+      title: "Host Sikh Awareness Week on Campus",
       description:
         "Create a welcoming Sikh Awareness Week activation on your campus, with a learning station and a facilitated conversation.",
       organization: "USM National Challenge · Demo",
@@ -157,7 +158,7 @@ export function seed(): State {
     },
     {
       id: "shared",
-      title: "Two campuses. One shared purpose.",
+      title: "Organize a Joint SSA Service Day",
       description:
         "Partner with another SSA to organize a joint service project and create a reusable playbook for the next generation.",
       organization: "USM National Challenge · Demo",
@@ -185,7 +186,7 @@ export function seed(): State {
   ];
   return {
     chapters,
-    challenges,
+    challenges: [...challenges, ...arenaDemoChallenges()],
     participations: [
       {
         id: "p-seed",

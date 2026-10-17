@@ -208,3 +208,35 @@ test("Start a Chapter → USM review → one chapter, officer membership, onboar
     page.getByRole("button", { name: /Fictional Coastal SSA/ }),
   ).toBeVisible();
 });
+
+test("Arena region navigation and demo participation labels", async ({
+  page,
+}) => {
+  await page.goto("/?view=arena");
+  await page.getByRole("button", { name: /Across the country/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "Serve together, nationwide" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Run a Campus Food Drive" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "West opportunities", exact: true }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Clear filters", exact: true })
+    .click();
+  await page
+    .getByRole("textbox", { name: "Search challenges" })
+    .fill("Build a Pantry Volunteer Webpage");
+  await expect(
+    page.getByText("1 of 1 chapter places left", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "View details", exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText(
+    "One chapter can claim this request.",
+  );
+  await expect(page.getByRole("dialog")).toContainText(
+    "Limited to West chapters.",
+  );
+});

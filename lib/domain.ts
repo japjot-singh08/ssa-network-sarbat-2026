@@ -69,6 +69,9 @@ export const actionSchema = z.discriminatedUnion("action", [
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/)
       .refine((v) => !isNaN(Date.parse(v))),
+    sample: z.boolean().default(false),
+    maxChapters: z.number().int().min(1).max(1000).nullable().optional(),
+    restrictRegion: z.boolean().optional(),
     volunteers: z.number().int().min(1).max(10000).nullable(),
     points: z.number().int().min(1).max(1000),
     grant: z.number().min(0).max(10000),
@@ -154,6 +157,24 @@ export function apply(state: State, actor: Actor, action: Action) {
       return "Interest saved.";
     }
     officer();
+    const own = state.participations.some(
+      (p) => p.chapterId === actor.chapterId && p.challengeId === c.id,
+    );
+    if (!own) {
+      const chapter = state.chapters.find((ch) => ch.id === actor.chapterId);
+      need(
+        !c.restrictRegion ||
+          c.region === "National" ||
+          chapter?.region === c.region,
+        "This challenge is limited to chapters in its region.",
+      );
+      need(
+        !c.maxChapters ||
+          state.participations.filter((p) => p.challengeId === c.id).length <
+            c.maxChapters,
+        "All chapter places are claimed. This challenge remains visible for reference.",
+      );
+    }
     if (
       !state.participations.some(
         (p) => p.chapterId === actor.chapterId && p.challengeId === c.id,

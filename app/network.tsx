@@ -301,6 +301,17 @@ export default function Network() {
     }[view as string] ||
     "Your community";
   const showChallenge = (c: Challenge) => setDetail(c);
+  const availability = (c: Challenge) => {
+    const count =
+      state?.participations.filter((p) => p.challengeId === c.id).length || 0;
+    return c.status !== "OPEN"
+      ? "Closed"
+      : c.maxChapters
+        ? count >= c.maxChapters
+          ? "Claimed · view details"
+          : `${c.maxChapters - count} of ${c.maxChapters} chapter places left`
+        : "Open to multiple chapters";
+  };
   const challengeCards = (items: Challenge[]) =>
     items.length ? (
       <div className="challenge-grid">
@@ -339,6 +350,19 @@ export default function Network() {
               </div>
               <h3>{c.title}</h3>
               <p className="organization">{c.organization}</p>
+              <div className="row wrap">
+                <Badge>
+                  {c.region === "National" ? "Nationwide" : c.region}
+                </Badge>
+                <Badge>
+                  {c.maxChapters === 1
+                    ? "One chapter"
+                    : c.maxChapters
+                      ? "Limited places"
+                      : "Shared challenge"}
+                </Badge>
+                {c.sample !== false && <Badge>Fictional demo</Badge>}
+              </div>
               <p className="clamp">{c.description}</p>
               <div className="card-meta">
                 <span>
@@ -350,14 +374,26 @@ export default function Network() {
                   {c.deadline ? date(c.deadline) : "Needs clarification"}
                 </span>
               </div>
+              {c.grant > 0 && (
+                <p className="small">
+                  <strong>{availability(c)}</strong>
+                </p>
+              )}
+              {state?.participations.some(
+                (p) =>
+                  p.challengeId === c.id &&
+                  p.chapterId === state.actor.chapterId,
+              ) && (
+                <Badge tone="gold">
+                  Your chapter joined · see My Challenges
+                </Badge>
+              )}
               <div className="card-footer">
                 <span>
                   {c.grant > 0 ? (
                     <Badge tone="gold">{money(c.grant)} grant record</Badge>
                   ) : (
-                    <Badge tone="green">
-                      {c.status === "OPEN" ? "Open for chapters" : "Closed"}
-                    </Badge>
+                    <Badge tone="green">{availability(c)}</Badge>
                   )}
                 </span>
                 <button
@@ -777,6 +813,51 @@ export default function Network() {
               </div>
               {arenaTab === "Discover" ? (
                 <>
+                  <div
+                    className="arena-regions"
+                    aria-label="Explore challenges by region"
+                  >
+                    {[
+                      "National",
+                      "West",
+                      "Southeast",
+                      "Midwest",
+                      "Northeast",
+                      "Southwest",
+                    ].map((r, i) => (
+                      <button
+                        key={r}
+                        className={
+                          "region-tile region-" +
+                          i +
+                          (region === r ? " active" : "")
+                        }
+                        onClick={() =>
+                          setRegion(region === r ? "All regions" : r)
+                        }
+                        aria-pressed={region === r}
+                      >
+                        <span className="region-symbol">
+                          {["◎", "◒", "☀", "▦", "◈", "△"][i]}
+                        </span>
+                        <strong>
+                          {r === "National" ? "Across the country" : r}
+                        </strong>
+                        <span>
+                          {
+                            state.challenges.filter((c) => c.region === r)
+                              .length
+                          }{" "}
+                          opportunities
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="notice small">
+                    Shared challenges stay open when another SSA joins. Limited
+                    requests show how many chapter places remain. Each chapter
+                    submits its own evidence for human review.
+                  </div>
                   <div className="filters">
                     <label className="search">
                       <Search size={18} />
@@ -872,8 +953,8 @@ export default function Network() {
                       Clear filters
                     </button>
                   </div>
-                  {challengeCards(
-                    state.challenges.filter(
+                  {(() => {
+                    const filtered = state.challenges.filter(
                       (c) =>
                         (status === "ALL" || c.status === status) &&
                         (category === "All categories" ||
@@ -893,11 +974,43 @@ export default function Network() {
                         `${c.title} ${c.description} ${c.organization}`
                           .toLowerCase()
                           .includes(q.toLowerCase()),
-                    ),
-                  )}
+                    );
+                    return filtered.length
+                      ? [
+                          "National",
+                          "West",
+                          "Southeast",
+                          "Midwest",
+                          "Northeast",
+                          "Southwest",
+                        ].map((r) => {
+                          const items = filtered.filter((c) => c.region === r);
+                          return items.length ? (
+                            <section className="arena-region-section" key={r}>
+                              <div className="row between">
+                                <h2>
+                                  {r === "National"
+                                    ? "Serve together, nationwide"
+                                    : `${r} opportunities`}
+                                </h2>
+                                <span className="badge">
+                                  {items.length} challenges
+                                </span>
+                              </div>
+                              <p className="muted">
+                                {r === "National"
+                                  ? "Chapters across the country can contribute independently."
+                                  : "Local needs and regional projects. Check each challenge’s eligibility."}
+                              </p>
+                              {challengeCards(items)}
+                            </section>
+                          ) : null;
+                        })
+                      : challengeCards([]);
+                  })()}
                   <p className="muted small">
-                    All opportunities shown are fictional demo records. Points
-                    are awarded only after human verification.
+                    Cards labeled fictional demo are sample opportunities.
+                    Points are awarded only after human verification.
                   </p>
                 </>
               ) : (
@@ -1438,7 +1551,7 @@ export default function Network() {
           <div className="row wrap">
             <Badge>{detail.type}</Badge>
             <Badge tone="gold">{detail.points} base points</Badge>
-            <Badge tone="green">{detail.status}</Badge>
+            <Badge tone="green">{availability(detail)}</Badge>
           </div>
           <p className="lead">{detail.description}</p>
           <p className="muted">{detail.organization}</p>
@@ -1466,6 +1579,17 @@ export default function Network() {
               <b>{money(detail.grant)} · No payment</b>
             </div>
           </Values>
+          <p className="notice">
+            {detail.maxChapters === 1
+              ? "One chapter can claim this request."
+              : detail.maxChapters
+                ? `Up to ${detail.maxChapters} chapters can participate.`
+                : "Multiple chapters can take part independently."}{" "}
+            {detail.restrictRegion && detail.region !== "National"
+              ? `Limited to ${detail.region} chapters.`
+              : "Chapters from any region may participate if they meet the requirements."}{" "}
+            Rewards are awarded once per chapter after approval.
+          </p>
           <h3>Who can take part</h3>
           <p>{detail.eligibility}</p>
           <h3>What completion looks like</h3>
@@ -1483,6 +1607,20 @@ export default function Network() {
               disabled={
                 busy ||
                 detail.status !== "OPEN" ||
+                (!state.participations.some(
+                  (p) =>
+                    p.chapterId === state.actor.chapterId &&
+                    p.challengeId === detail.id,
+                ) &&
+                  ((!!detail.maxChapters &&
+                    state.participations.filter(
+                      (p) => p.challengeId === detail.id,
+                    ).length >= detail.maxChapters) ||
+                    (!!detail.restrictRegion &&
+                      detail.region !== "National" &&
+                      state.actor.role === "OFFICER" &&
+                      state.chapters.find((c) => c.id === state.actor.chapterId)
+                        ?.region !== detail.region))) ||
                 (!state.demo &&
                   state.actor.id !== "guest" &&
                   state.actor.role !== "OFFICER")
@@ -2063,6 +2201,11 @@ function ReviewDesk({
                   action: "publish",
                   points: Number(f.get("points")),
                   grant: Number(f.get("grant")),
+                  sample: f.get("sample") === "on",
+                  maxChapters: f.get("maxChapters")
+                    ? Number(f.get("maxChapters"))
+                    : null,
+                  restrictRegion: f.get("restrictRegion") === "on",
                   volunteers: f.get("volunteers")
                     ? Number(f.get("volunteers"))
                     : null,
@@ -2155,6 +2298,24 @@ function ReviewDesk({
                   }
                 />
               </Field>
+              <label className="check-label">
+                <input name="sample" type="checkbox" /> Fictional demo /
+                rehearsal challenge
+              </label>
+              <Field label="Maximum participating chapters (blank = unlimited)">
+                <input
+                  name="maxChapters"
+                  type="number"
+                  min="1"
+                  max="1000"
+                  placeholder="Unlimited · enter 1 for a one-time request"
+                />
+              </Field>
+              <label className="check-label">
+                <input name="restrictRegion" type="checkbox" /> Limit
+                participation to the selected region (National allows all
+                regions)
+              </label>
               <Field label="Base points (demo setting)">
                 <input
                   name="points"

@@ -2277,3 +2277,69 @@ summary {
     font-size: 12px;
   }
 }
+
+.arena-regions {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.region-tile {
+  border: 1px solid var(--border, #dfe4d6);
+  border-radius: 18px;
+  padding: 20px 14px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  background: #f0f2df;
+  color: #203d32;
+  cursor: pointer;
+}
+.region-tile.active {
+  outline: 3px solid #b38b35;
+  outline-offset: 2px;
+}
+.region-symbol {
+  font-size: 30px;
+}
+.region-tile span:last-child {
+  font-size: 12px;
+}
+.region-1 {
+  background: #e7eee5;
+}
+.region-2 {
+  background: #fbefd5;
+}
+.region-3 {
+  background: #e8edf4;
+}
+.region-4 {
+  background: #efe9f1;
+}
+.region-5 {
+  background: #f5e4d9;
+}
+.arena-region-section {
+  margin: 38px 0;
+}
+.arena-region-section h2 {
+  font-size: 28px;
+}
+.arena-region-section > .muted {
+  margin: 0 0 20px;
+}
+@media (max-width: 1000px) {
+  .arena-regions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .arena-regions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .region-tile {
+    padding: 14px;
+  }
+}

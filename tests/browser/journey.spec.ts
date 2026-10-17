@@ -50,7 +50,16 @@ test("student → officer → human reviewer → leaderboard → feed → Toolki
   await page
     .getByRole("button", { name: "Enter demonstration", exact: false })
     .click();
-  await page.getByRole("button", { name: "View details" }).first().click();
+  await page
+    .locator("article.challenge-card")
+    .filter({
+      has: page.getByRole("heading", {
+        name: "Pack Winter Care Kits in Seattle",
+        exact: true,
+      }),
+    })
+    .getByRole("button", { name: "View details" })
+    .click();
   await expect(
     page.getByRole("dialog").getByText("What completion looks like"),
   ).toBeVisible();
@@ -174,7 +183,7 @@ test("student → officer → human reviewer → leaderboard → feed → Toolki
     .getByRole("button", { name: "National feed", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "A little warmth. A lasting impact." }),
+    page.getByRole("heading", { name: "Pack Winter Care Kits in Seattle" }),
   ).toBeVisible();
   await page
     .getByRole("button", { name: /Shabash/ })
